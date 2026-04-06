@@ -116,7 +116,7 @@
       linear-gradient(180deg, #fff7fb 0%, #fff1f7 100%);
   }
   :root[data-theme="cherry-blossom"] .sidebar-header,
-  :root[data-theme="cherry-blossom"] .topbar{position:relative;overflow:hidden;}
+  :root[data-theme="cherry-blossom"] .topbar{position:relative;overflow:visible;}
   :root[data-theme="cherry-blossom"] .sidebar-header::after,
   :root[data-theme="cherry-blossom"] .topbar::after{
     content:'';position:absolute;right:-6px;top:-8px;width:120px;height:70px;
@@ -699,6 +699,7 @@
 .ws-action-btn:hover{background:rgba(255,255,255,.1);color:var(--text);}
 /* ── Profile dropdown + management panel ── */
 .profile-chip{user-select:none;color:rgba(168,139,250,.9)!important;}
+.topbar-chips #profileChipWrap{z-index:40;}
 .profile-dropdown{display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:260px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:200;overflow:hidden;max-height:380px;overflow-y:auto;}
 .profile-dropdown.open{display:block;}
 .profile-opt{padding:9px 14px;cursor:pointer;transition:background .12s;}
