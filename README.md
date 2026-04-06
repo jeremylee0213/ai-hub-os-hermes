@@ -412,6 +412,8 @@ Additional docs:
 - `docs/onboarding.md` — onboarding notes and bot naming direction
 - `docs/private-beta-guide.md` — what early users should try first
 - `docs/voice-troubleshooting.md` — browser/microphone troubleshooting
+- `docs/promo-kit-ko.md` — Korean launch / beta / X copy set
+- `docs/install-with-hermes.md` — one-prompt install guide for Hermes CLI or bot
 
 ---
 
