@@ -20,6 +20,13 @@ This fork focuses on:
 - artifact creation and management inside the UI
 - setup packs for reusable workflows such as Obsidian, ShareNote, and Telegram handoff
 
+## Landing copy
+
+Hermes for Web is a personalized AI workspace that remembers, creates, and hands work off across surfaces.
+
+Korean version:
+Hermes for Web 은 기억하고, 만들고, 이어주는 개인화 AI 작업실입니다.
+
 ---
 
 ## What this project is trying to be
@@ -204,6 +211,34 @@ http://localhost:8788
 ```
 
 If you already use LaunchAgent or background startup, use the port you configured there.
+
+---
+
+## Suggested screenshots for the repo page
+
+If you want the GitHub page to feel more like a product page than a source dump,
+start with 3–4 screenshots in this order:
+
+1. Home
+   - first-run onboarding
+   - personalization card
+   - Cherry Blossom default theme
+
+2. Setup Packs
+   - workflow starter cards
+   - hover/expanded explanations
+   - research packs like last30days and AutoResearch
+
+3. Artifacts
+   - artifact creation modal
+   - AI recommendation button
+   - generated artifact highlighted in the list
+
+4. Workspace
+   - file preview/editing
+   - generated files as real outputs
+
+Suggested captions live in `docs/launch-copy.md`.
 
 ---
 
