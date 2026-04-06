@@ -472,6 +472,7 @@
   .artifact-mini-btn{padding:6px 9px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:11px;cursor:pointer;}
   .artifact-mini-btn:hover{background:var(--hover-bg);}
   .artifact-empty{padding:12px;border:1px dashed var(--border2);border-radius:10px;color:var(--muted);font-size:12px;background:rgba(255,255,255,.02);}
+  .setup-pack-help{margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(124,185,255,.06);border:1px dashed rgba(124,185,255,.22);font-size:12px;line-height:1.6;color:var(--muted);}
   .preflight-pass{border-left:4px solid #22c55e;}
   .preflight-warn{border-left:4px solid #f59e0b;}
   .preflight-fail{border-left:4px solid #ef4444;}

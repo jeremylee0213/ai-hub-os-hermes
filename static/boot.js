@@ -66,7 +66,7 @@ $('btnAttach').onclick=()=>$('fileInput').click();
   const recognition=new SpeechRecognition();
   recognition.continuous=false;
   recognition.interimResults=true;
-  recognition.lang='en-US';
+  recognition.lang=(navigator.language||'ko-KR');
 
   let _finalText='';
   let _prefix='';
@@ -108,11 +108,13 @@ $('btnAttach').onclick=()=>$('fileInput').click();
   recognition.onerror=(event)=>{
     _setRecording(false);
     const msgs={
-      'not-allowed':'Microphone access denied. Check browser permissions.',
-      'no-speech':'No speech detected. Try again.',
-      'network':'Speech recognition unavailable.',
+      'not-allowed':'마이크 권한이 차단되었습니다. 브라우저 사이트 권한에서 마이크를 허용해 주세요.',
+      'service-not-allowed':'이 브라우저/환경에서 음성 인식 서비스 사용이 차단되었습니다.',
+      'no-speech':'음성이 감지되지 않았습니다. 다시 시도해 주세요.',
+      'audio-capture':'마이크를 찾지 못했습니다. 입력 장치를 확인해 주세요.',
+      'network':'음성 인식 서비스를 사용할 수 없습니다. 네트워크 또는 브라우저 지원 여부를 확인해 주세요.',
     };
-    showToast(msgs[event.error]||'Voice input error: '+event.error);
+    showToast(msgs[event.error]||('음성 입력 오류: '+event.error));
   };
 
   function _stopMic(){
@@ -128,6 +130,7 @@ $('btnAttach').onclick=()=>$('fileInput').click();
       _finalText='';
       // Snapshot existing textarea content so we append rather than replace
       _prefix=ta.value;
+      showToast(`음성 인식 시작 (${recognition.lang})`);
       recognition.start();
       _setRecording(true);
     }
