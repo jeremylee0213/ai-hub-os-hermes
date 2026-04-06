@@ -468,6 +468,35 @@
     </div>
   </aside>
 </div>
+<div class="artifact-modal-overlay" id="onboardingOverlay" style="display:none">
+  <div class="artifact-modal" style="max-width:560px">
+    <div class="artifact-modal-header">
+      <h3 style="margin:0;font-size:16px">Hermes for Web 시작 가이드</h3>
+      <button class="panel-icon-btn" id="btnCloseOnboarding" title="Close">&#10005;</button>
+    </div>
+    <div class="artifact-modal-body">
+      <div class="setup-pack-help" style="margin-top:0;margin-bottom:12px">이 화면은 첫 실행 사용자를 위한 빠른 안내입니다. Hermes for Web 은 채팅창이 아니라, 기억하고 만들고 공유하는 AI 작업실입니다.</div>
+      <div class="setup-pack-detail" style="display:block;margin-top:0">
+        <div class="setup-pack-detail-title">처음엔 이렇게 써보세요</div>
+        <ul>
+          <li>1) Assistant Name 에 원하는 봇 이름을 설정하세요</li>
+          <li>2) Setup Packs 에서 자신의 흐름에 맞는 팩을 하나 실행하세요</li>
+          <li>3) Artifact 를 하나 만들어 파일처럼 남겨보세요</li>
+          <li>4) 필요하면 Telegram handoff 나 Share 흐름으로 넘겨보세요</li>
+        </ul>
+      </div>
+      <div class="quick-actions-grid" style="margin-top:12px">
+        <button class="quick-action" onclick="switchPanel('setup');closeOnboardingModal()">🧰 Setup Packs 열기</button>
+        <button class="quick-action" onclick="openArtifactModal();closeOnboardingModal()">📦 첫 Artifact 만들기</button>
+        <button class="quick-action" onclick="toggleSettings();closeOnboardingModal()">⚙️ 이름/설정 바꾸기</button>
+        <button class="quick-action" onclick="closeOnboardingModal()">💬 바로 채팅 시작</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:14px;font-size:12px;color:var(--muted)">
+        <input type="checkbox" id="onboardingDontShow" style="width:15px;height:15px;accent-color:var(--accent)"> 다시 보지 않기
+      </label>
+    </div>
+  </div>
+</div>
 <div class="artifact-modal-overlay" id="artifactModalOverlay" style="display:none">
   <div class="artifact-modal">
     <div class="artifact-modal-header">

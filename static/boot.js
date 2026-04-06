@@ -357,10 +357,12 @@ function _loadArtifacts(){
 function _saveArtifacts(items){
   localStorage.setItem(_artifactStoreKey(), JSON.stringify(items.slice(0,20)));
 }
+let _recentArtifactPath='';
 function registerArtifact(item){
   const items=_loadArtifacts().filter(x=>x.path!==item.path);
   items.unshift({...item,created_at:new Date().toISOString()});
   _saveArtifacts(items);
+  _recentArtifactPath=item.path;
   renderArtifactList();
 }
 function removeArtifactRecord(path){
@@ -393,7 +395,7 @@ function renderArtifactList(){
     wraps.forEach(w=>w.innerHTML='<div class="artifact-empty">아직 아티팩트가 없습니다. 아티팩트 추가 또는 AI로 만들기 버튼을 눌러 시작해보세요.</div>');
     return;
   }
-  const html=items.map(item=>`<div class="artifact-item"><div class="artifact-item-main"><div class="artifact-item-title">${esc(item.name||item.path)}</div><div class="artifact-item-meta">${esc(item.type||'artifact')} · ${esc(item.path||'')}</div></div><div class="artifact-item-actions"><button class="artifact-mini-btn" onclick="openArtifactPath('${esc(item.path)}')">열기</button><button class="artifact-mini-btn" onclick="runArtifactWorkflow('${esc(item.path)}','share')">Share</button><button class="artifact-mini-btn" onclick="runArtifactWorkflow('${esc(item.path)}','telegram')">Telegram</button><button class="artifact-mini-btn" onclick="runArtifactWorkflow('${esc(item.path)}','memory')">Memory</button><button class="artifact-mini-btn" onclick="deleteArtifactPath('${esc(item.path)}','${esc(item.name||item.path)}')">삭제</button></div></div>`).join('');
+  const html=items.map(item=>`<div class="artifact-item ${item.path===_recentArtifactPath?'just-created':''}"><div class="artifact-item-main"><div class="artifact-item-title">${esc(item.name||item.path)}</div><div class="artifact-item-meta">${esc(item.type||'artifact')} · ${esc(item.path||'')}</div></div><div class="artifact-item-actions"><button class="artifact-mini-btn" onclick="openArtifactPath('${esc(item.path)}')">열기</button><button class="artifact-mini-btn" onclick="runArtifactWorkflow('${esc(item.path)}','share')">Share</button><button class="artifact-mini-btn" onclick="runArtifactWorkflow('${esc(item.path)}','telegram')">Telegram</button><button class="artifact-mini-btn" onclick="runArtifactWorkflow('${esc(item.path)}','memory')">Memory</button><button class="artifact-mini-btn" onclick="deleteArtifactPath('${esc(item.path)}','${esc(item.name||item.path)}')">삭제</button></div></div>`).join('');
   wraps.forEach(w=>w.innerHTML=html);
 }
 async function openArtifactPath(path){
@@ -637,6 +639,20 @@ document.querySelectorAll('.preflight-run').forEach(btn=>{
   };
 });
 renderSetupPackHistory();
+function maybeShowOnboardingModal(){
+  const key='hermes-webui-onboarding-dismissed';
+  if(localStorage.getItem(key)==='1') return;
+  const hasSeenSession=!!localStorage.getItem('hermes-webui-session');
+  if(hasSeenSession) return;
+  const overlay=$('onboardingOverlay');
+  if(overlay) overlay.style.display='flex';
+}
+function closeOnboardingModal(){
+  const overlay=$('onboardingOverlay');
+  if(!overlay) return;
+  if(($('onboardingDontShow')||{}).checked) localStorage.setItem('hermes-webui-onboarding-dismissed','1');
+  overlay.style.display='none';
+}
 
 async function loadPersonalizationCard(){
   const card=$('personalizationCard');
@@ -735,6 +751,8 @@ async function applyBotName(){
   await populateModelDropdown();
   await applyBotName();
   await loadPersonalizationCard();
+  if($('btnCloseOnboarding')) $('btnCloseOnboarding').onclick=closeOnboardingModal;
+  maybeShowOnboardingModal();
   // Restore last-used model preference
   const savedModel=localStorage.getItem('hermes-webui-model');
   if(savedModel && $('modelSelect')){

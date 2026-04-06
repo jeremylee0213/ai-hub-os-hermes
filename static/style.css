@@ -447,6 +447,10 @@
   .quick-actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
   .quick-action{padding:12px 14px;background:var(--surface);border:1px solid var(--border2);border-radius:12px;font-size:13px;color:var(--text);cursor:pointer;transition:all .15s;text-align:left;box-shadow:0 4px 14px rgba(0,0,0,.06);}
   .quick-action:hover{transform:translateY(-1px);border-color:rgba(124,185,255,.35);background:var(--hover-bg);}
+  .quick-action.setup-pack[data-pack="obsidian-starter"], .quick-action.setup-pack[data-pack="obsidian-power"]{border-color:rgba(124,185,255,.28);background:linear-gradient(180deg,rgba(124,185,255,.08),rgba(124,185,255,.02));}
+  .quick-action.setup-pack[data-pack="sharenote-telegram"], .quick-action.setup-pack[data-pack="telegram-onboarding"]{border-color:rgba(233,69,96,.22);background:linear-gradient(180deg,rgba(233,69,96,.07),rgba(233,69,96,.02));}
+  .quick-action.setup-pack[data-pack="memory-sync"]{border-color:rgba(168,139,250,.24);background:linear-gradient(180deg,rgba(168,139,250,.08),rgba(168,139,250,.02));}
+  .quick-action.setup-pack[data-pack="last30days"], .quick-action.setup-pack[data-pack="autoresearch"]{border-color:rgba(72,187,120,.24);background:linear-gradient(180deg,rgba(72,187,120,.08),rgba(72,187,120,.02));}
   .artifact-bar{padding:8px 20px 0;flex-shrink:0;background:linear-gradient(to bottom,var(--topbar-bg),transparent);}
   .artifact-bar-inner{max-width:980px;margin:0 auto;background:var(--input-bg);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
   .artifact-bar-group{flex:1;min-width:0;}
@@ -468,6 +472,7 @@
   .artifact-item-main{min-width:0;}
   .artifact-item-title{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .artifact-item-meta{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .artifact-item.just-created{border-color:rgba(124,185,255,.36);box-shadow:0 0 0 1px rgba(124,185,255,.08),0 10px 24px rgba(124,185,255,.08);}
   .artifact-item-actions{display:flex;gap:6px;flex-shrink:0;}
   .artifact-mini-btn{padding:6px 9px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:11px;cursor:pointer;}
   .artifact-mini-btn:hover{background:var(--hover-bg);}
