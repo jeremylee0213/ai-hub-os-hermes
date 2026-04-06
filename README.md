@@ -363,6 +363,12 @@ Before the first private push, verify:
 - sidebar tool panels render correctly
 - no personal absolute paths are exposed in README examples unless clearly labeled as examples
 
+Additional docs:
+- `README.ko.md` — Korean guide
+- `docs/onboarding.md` — onboarding notes and bot naming direction
+- `docs/private-beta-guide.md` — what early users should try first
+- `docs/voice-troubleshooting.md` — browser/microphone troubleshooting
+
 ---
 
 ## Recommended next steps after private upload
