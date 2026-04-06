@@ -414,6 +414,7 @@ Additional docs:
 - `docs/voice-troubleshooting.md` — browser/microphone troubleshooting
 - `docs/promo-kit-ko.md` — Korean launch / beta / X copy set
 - `docs/install-with-hermes.md` — one-prompt install guide for Hermes CLI or bot
+- `docs/full-install-from-web.md` — beginner path from zero Hermes install to WebUI
 
 ---
 

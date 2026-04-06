@@ -6,6 +6,8 @@ https://github.com/reallygood83/hermes-for-web
 ## Goal
 Let an existing Hermes CLI agent or Hermes bot install this WebUI from a single prompt.
 
+If the user has never installed Hermes Agent before, use the Full Hermes Install path described in `docs/full-install-from-web.md`.
+
 ## Copy-paste installer prompt
 아래 프롬프트를 Hermes CLI 또는 Hermes 봇에 그대로 넣으면 됩니다.
 
@@ -33,3 +35,17 @@ This prompt is optimized for Hermes-style agents because it asks for:
 
 ## Recommended follow-up prompt
 설치가 끝났으면 Cherry Blossom 기본 테마, Assistant Name, Setup Packs, Artifact 생성, Telegram Onboarding Pack 까지 확인해줘.
+
+## Full install prompt for complete beginners
+
+Hermes Agent 를 아직 한 번도 설치해본 적이 없다.
+https://github.com/NousResearch/hermes-agent 와 https://github.com/reallygood83/hermes-for-web 를 기준으로 내 환경에 Hermes 전체를 처음부터 설치해줘.
+다음을 자동으로 진행해줘.
+1. Hermes Agent 설치 또는 update
+2. 필요한 의존성/실행 환경 점검
+3. Hermes 기본 실행 확인
+4. 원하면 Telegram 연결에 필요한 준비 항목도 점검
+5. hermes-for-web 설치 또는 update
+6. localhost:8788 기준 WebUI 실행 준비
+7. 설치 후 접속 주소, 재실행 방법, 다음 추천 단계 요약
+오류가 나면 가능한 범위에서 직접 수정하고, 남는 수동 단계만 최소한으로 알려줘.

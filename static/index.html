@@ -177,6 +177,8 @@
         <button class="quick-action setup-pack" data-pack="obsidian-power">⚙️ Obsidian Power</button>
         <button class="quick-action setup-pack" data-pack="memory-sync">🧠 Memory Sync</button>
         <button class="quick-action setup-pack" data-pack="telegram-onboarding">📣 Telegram Onboarding</button>
+        <button class="quick-action setup-pack" data-pack="hermes-full-install">🚀 Full Hermes Install</button>
+        <button class="quick-action setup-pack" data-pack="webui-only-install">🪄 WebUI-only Install</button>
         <button class="quick-action setup-pack" data-pack="last30days">📈 last30days</button>
         <button class="quick-action setup-pack" data-pack="autoresearch">🔬 AutoResearch</button>
       </div>
@@ -303,6 +305,8 @@
           <button class="quick-action setup-pack" data-pack="obsidian-power">⚙️ Obsidian Power</button>
           <button class="quick-action setup-pack" data-pack="memory-sync">🧠 Memory Sync</button>
           <button class="quick-action setup-pack" data-pack="telegram-onboarding">📣 Telegram Onboarding</button>
+          <button class="quick-action setup-pack" data-pack="hermes-full-install">🚀 Full Hermes Install</button>
+          <button class="quick-action setup-pack" data-pack="webui-only-install">🪄 WebUI-only Install</button>
           <button class="quick-action setup-pack" data-pack="last30days">📈 last30days</button>
           <button class="quick-action setup-pack" data-pack="autoresearch">🔬 AutoResearch</button>
         </div>
@@ -479,13 +483,15 @@
       <div class="setup-pack-detail" style="display:block;margin-top:0">
         <div class="setup-pack-detail-title">처음엔 이렇게 써보세요</div>
         <ul>
-          <li>1) Assistant Name 에 원하는 봇 이름을 설정하세요</li>
-          <li>2) Setup Packs 에서 자신의 흐름에 맞는 팩을 하나 실행하세요</li>
-          <li>3) Artifact 를 하나 만들어 파일처럼 남겨보세요</li>
-          <li>4) 필요하면 Telegram handoff 나 Share 흐름으로 넘겨보세요</li>
+          <li>1) Hermes 를 처음 쓰는 사람은 Full Hermes Install 을 선택하세요</li>
+          <li>2) 이미 Hermes 사용자라면 WebUI-only Install 또는 원하는 Setup Pack 을 실행하세요</li>
+          <li>3) Assistant Name 에 원하는 봇 이름을 설정하세요</li>
+          <li>4) Artifact 를 하나 만들어 파일처럼 남겨보세요</li>
         </ul>
       </div>
       <div class="quick-actions-grid" style="margin-top:12px">
+        <button class="quick-action setup-pack" data-pack="hermes-full-install" onclick="closeOnboardingModal()">🚀 처음부터 모두 설치</button>
+        <button class="quick-action setup-pack" data-pack="webui-only-install" onclick="closeOnboardingModal()">🪄 WebUI만 설치</button>
         <button class="quick-action" onclick="switchPanel('setup');closeOnboardingModal()">🧰 Setup Packs 열기</button>
         <button class="quick-action" onclick="openArtifactModal();closeOnboardingModal()">📦 첫 Artifact 만들기</button>
         <button class="quick-action" onclick="toggleSettings();closeOnboardingModal()">⚙️ 이름/설정 바꾸기</button>
