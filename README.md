@@ -287,6 +287,10 @@ Artifacts can be:
 - deleted
 - used as the base for Share / Telegram / Memory workflows
 
+Artifacts are intentionally flexible.
+The built-in types are examples, not a cage.
+Users can now choose a custom artifact type when the default categories do not fit their work.
+
 ---
 
 ## Preflight Validator

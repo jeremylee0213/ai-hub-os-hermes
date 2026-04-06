@@ -415,6 +415,8 @@ function openArtifactModal(){
   if(!overlay)return;
   $('artifactModalError').style.display='none';
   $('artifactType').value='note';
+  if($('artifactCustomTypeWrap')) $('artifactCustomTypeWrap').style.display='none';
+  if($('artifactCustomType')) $('artifactCustomType').value='';
   $('artifactName').value='';
   $('artifactSeed').value='';
   $('artifactUseAi').checked=false;
@@ -426,12 +428,15 @@ function closeArtifactModal(){
   if(overlay) overlay.style.display='none';
 }
 async function submitArtifactModal(){
-  const type=($('artifactType').value||'note').trim();
+  const selectedType=($('artifactType').value||'note').trim();
+  const customType=(($('artifactCustomType')||{}).value||'').trim();
+  const type=selectedType==='custom' ? (customType||'custom') : selectedType;
   const name=($('artifactName').value||'').trim();
   const seed=($('artifactSeed').value||'').trim();
   const useAi=$('artifactUseAi').checked;
   const err=$('artifactModalError');
   err.style.display='none';
+  if(selectedType==='custom' && !customType){err.textContent='사용자 정의 유형을 입력해 주세요';err.style.display='';return;}
   if(!name){err.textContent='파일 이름이 필요합니다';err.style.display='';return;}
   const cleanName=name.endsWith('.md')?name:name+'.md';
   const relPath=S.currentDir==='.'?cleanName:(S.currentDir+'/'+cleanName);
@@ -440,7 +445,8 @@ async function submitArtifactModal(){
     posting:'# Posting Brief\n\n'+(seed?seed+'\n\n':'')+'## Topic\n\n## Audience\n\n## Key message\n',
     brief:'# Brief\n\n'+(seed?seed+'\n\n':'')+'## Goal\n\n## Inputs\n\n## Next steps\n',
     memo:'# Memo\n\n'+(seed?seed+'\n\n':'')+'- Idea\n- Context\n- Follow-up\n',
-    research:'# Research Brief\n\n'+(seed?seed+'\n\n':'')+'## Question\n\n## Hypothesis\n\n## Sources\n'
+    research:'# Research Brief\n\n'+(seed?seed+'\n\n':'')+'## Question\n\n## Hypothesis\n\n## Sources\n',
+    custom:'# Custom Artifact\n\n'+(seed?seed+'\n\n':'')+'## Purpose\n\n## Notes\n\n## Next Steps\n'
   };
   try{
     await api('/api/file/create',{method:'POST',body:JSON.stringify({session_id:S.session.session_id,path:relPath,content:templateMap[type]||templateMap.note})});
@@ -456,6 +462,19 @@ async function submitArtifactModal(){
     }
   }catch(e){err.textContent='생성 실패: '+e.message;err.style.display='';}
 }
+function updateArtifactTypeUi(){
+  const wrap=$('artifactCustomTypeWrap');
+  const type=($('artifactType').value||'note').trim();
+  if(wrap) wrap.style.display = type==='custom' ? '' : 'none';
+}
+function suggestArtifactWithAi(){
+  const seed=(($('artifactSeed')||{}).value||'').trim();
+  const text=`현재 대화를 바탕으로 어떤 아티팩트를 만들면 좋을지 추천해줘. note, posting brief, memo, research brief, custom artifact 중 하나를 고르고, 이유와 파일명 제안 3개, 초안 구조를 간단히 제시해줘. 사용자 메모: ${seed||'없음'}`;
+  $('msg').value=text;
+  autoResize();
+  $('msg').focus();
+  showToast('AI 추천 프롬프트를 입력창에 넣었습니다');
+}
 if($('btnAddArtifact')) $('btnAddArtifact').onclick=openArtifactModal;
 if($('btnAddArtifactSidebar')) $('btnAddArtifactSidebar').onclick=openArtifactModal;
 if($('btnAiArtifact')) $('btnAiArtifact').onclick=promptAiArtifact;
@@ -463,6 +482,8 @@ if($('btnAiArtifactSidebar')) $('btnAiArtifactSidebar').onclick=promptAiArtifact
 if($('btnArtifactCancel')) $('btnArtifactCancel').onclick=closeArtifactModal;
 if($('btnCloseArtifactModal')) $('btnCloseArtifactModal').onclick=closeArtifactModal;
 if($('btnArtifactCreate')) $('btnArtifactCreate').onclick=submitArtifactModal;
+if($('artifactType')) $('artifactType').onchange=updateArtifactTypeUi;
+if($('btnArtifactSuggest')) $('btnArtifactSuggest').onclick=suggestArtifactWithAi;
 renderArtifactList();
 
 function _setupPackStoreKey(){
