@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hermes</title>
+<link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20260406c">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=20260406c">
+<link rel="apple-touch-icon" href="/static/favicon.png?v=20260406c">
+<link rel="shortcut icon" href="/static/favicon.png?v=20260406c">
+<script>(function(){var t=localStorage.getItem('hermes-theme');if(t&&t!=='dark')document.documentElement.dataset.theme=t;})()</script>
+<link rel="stylesheet" href="/static/style.css?v=20260406d">
+  <!-- Prism.js syntax highlighting (loaded async, non-blocking) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" integrity="sha384-wFjoQjtV1y5jVHbt0p35Ui8aV8GVpEZkyF99OXWqP/eNJDU93D3Ugxkoyh6Y2I4A" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" integrity="sha384-MXybTpajaBV0AkcBaCPT4KIvo0FzoCiWXgcihYsw4FUkEz0Pv3JGV6tk2G8vJtDc" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" integrity="sha384-Uq05+JLko69eOiPr39ta9bh7kld5PKZoU+fF7g0EXTAriEollhZ+DrN8Q/Oi8J2Q" crossorigin="anonymous" defer></script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-blossoms" aria-hidden="true">
+      <span class="petal p1"></span>
+      <span class="petal p2"></span>
+      <span class="petal p3"></span>
+      <span class="petal p4"></span>
+      <span class="petal p5"></span>
+      <span class="petal p6"></span>
+      <span class="petal p7"></span>
+      <span class="petal p8"></span>
+      <span class="petal p9"></span>
+      <span class="petal p10"></span>
+    </div>
+    <div class="sidebar-header"><div class="logo">H</div><div><h1 style="margin:0;font-size:15px;font-weight:700;letter-spacing:-.01em">Hermes</h1><div style="font-size:10px;color:var(--muted);opacity:.8;margin-top:1px">v0.35.1</div></div></div>
+    <div class="sidebar-nav">
+      <button class="nav-tab active" data-panel="chat" data-label="채팅" onclick="switchPanel('chat')" title="채팅">&#128172;</button>
+      <button class="nav-tab" data-panel="tasks" data-label="작업" onclick="switchPanel('tasks')" title="예약 작업">&#128197;</button>
+      <button class="nav-tab" data-panel="skills" data-label="스킬" onclick="switchPanel('skills')" title="스킬">&#129513;</button>
+      <button class="nav-tab" data-panel="memory" data-label="기억" onclick="switchPanel('memory')" title="기억">&#129504;</button>
+      <button class="nav-tab" data-panel="workspaces" data-label="공간" onclick="switchPanel('workspaces')" title="작업공간">&#128193;</button>
+      <button class="nav-tab" data-panel="profiles" data-label="프로필" onclick="switchPanel('profiles')" title="에이전트 프로필"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>
+      <button class="nav-tab" data-panel="todos" data-label="할 일" onclick="switchPanel('todos')" title="현재 할 일 목록">&#128221;</button>
+      <button class="nav-tab" data-panel="artifacts" data-label="아티팩트" onclick="switchPanel('artifacts')" title="아티팩트">&#128230;</button>
+      <button class="nav-tab" data-panel="setup" data-label="설치팩" onclick="switchPanel('setup')" title="Setup Packs">&#129520;</button>
+      <button class="nav-tab" data-panel="checks" data-label="점검" onclick="switchPanel('checks')" title="Preflight Validator">&#128737;</button>
+    </div>
+    <!-- Chat panel -->
+    <div class="panel-view active" id="panelChat">
+      <div class="sidebar-section">
+        <button class="new-chat-btn" id="btnNewChat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          새 대화 <span style="font-size:10px;opacity:.5;margin-left:4px">&#8984;K</span>
+        </button>
+      </div>
+      <div class="session-search"><input id="sessionSearch" placeholder="대화 검색..." oninput="filterSessions()"></div>
+      <div class="session-list" id="sessionList"></div>
+    </div>
+    <!-- Tasks (cron) panel -->
+    <div class="panel-view" id="panelTasks">
+      <div class="sidebar-section" style="padding-bottom:4px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--muted)">예약 작업</div>
+        <button class="cron-btn run" style="padding:3px 8px;font-size:10px" onclick="toggleCronForm()">+ 새 작업</button>
+      </div>
+      <!-- Create job form (hidden by default) -->
+      <div id="cronCreateForm" style="display:none;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <textarea id="cronFormVibe" rows="2" placeholder="예: 매일 아침 8시에 AI 뉴스 요약해서 텔레그램으로 보내줘" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:7px 8px;font-size:12px;outline:none;resize:none;font-family:inherit;margin-bottom:6px"></textarea>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <button class="cron-btn run" style="flex:1" onclick="autofillCronFromVibe()">✨ AI가 채우기</button>
+          <button class="cron-btn" style="flex:1" onclick="fillCronExample('daily')">매일 예시</button>
+          <button class="cron-btn" style="flex:1" onclick="fillCronExample('weekly')">주간 예시</button>
+        </div>
+        <div id="cronFormPreview" class="cron-preview" style="display:none"></div>
+        <input id="cronFormName" placeholder="작업 이름 (선택)" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:12px;outline:none;margin-bottom:6px">
+        <input id="cronFormSchedule" placeholder="스케줄: '0 9 * * *' 또는 'every 1h'" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:12px;outline:none;margin-bottom:6px">
+        <textarea id="cronFormPrompt" rows="3" placeholder="프롬프트 (자급자족형으로 작성)" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:12px;outline:none;resize:none;font-family:inherit;margin-bottom:6px"></textarea>
+        <select id="cronFormDeliver" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:12px;outline:none;margin-bottom:6px">
+          <option value="local">로컬 (결과만 저장)</option>
+          <option value="discord">Discord</option>
+          <option value="telegram">Telegram</option>
+        </select>
+        <div class="skill-picker-wrap" style="margin-bottom:8px">
+          <input id="cronFormSkillSearch" placeholder="스킬 추가 (선택)..." style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:12px;outline:none" autocomplete="off">
+          <div id="cronFormSkillDropdown" class="skill-picker-dropdown" style="display:none"></div>
+          <div id="cronFormSkillTags" class="skill-picker-tags"></div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="cron-btn run" style="flex:1" onclick="submitCronCreate()">작업 만들기</button>
+          <button class="cron-btn" style="flex:1" onclick="toggleCronForm()">취소</button>
+        </div>
+        <div id="cronFormError" style="font-size:11px;color:var(--accent);margin-top:6px;display:none"></div>
+      </div>
+      <div class="cron-list" id="cronList"><div style="padding:12px;color:var(--muted);font-size:12px">불러오는 중...</div></div>
+    </div>
+    <!-- Skills panel -->
+    <div class="panel-view" id="panelSkills">
+      <div class="sidebar-section" style="padding-bottom:4px;display:flex;align-items:center;justify-content:space-between">
+        <div class="skills-search" style="flex:1;padding:0"><input id="skillsSearch" placeholder="스킬 검색..." oninput="filterSkills()"></div>
+        <button class="cron-btn run" style="padding:3px 8px;font-size:10px;flex-shrink:0;margin-left:6px" onclick="toggleSkillForm()">+ 새 스킬</button>
+      </div>
+      <!-- Skill create/edit form (hidden by default) -->
+      <div id="skillCreateForm" style="display:none;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <input id="skillFormName" placeholder="스킬 이름 (예: my-skill)" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:12px;outline:none;margin-bottom:6px;box-sizing:border-box">
+        <input id="skillFormCategory" placeholder="카테고리 (선택, 예: devops)" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:12px;outline:none;margin-bottom:6px;box-sizing:border-box">
+        <textarea id="skillFormContent" rows="6" placeholder="SKILL.md 내용 (YAML frontmatter + markdown 본문)" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:12px;outline:none;resize:vertical;font-family:'SF Mono',ui-monospace,monospace;margin-bottom:6px;box-sizing:border-box"></textarea>
+        <div style="display:flex;gap:6px">
+          <button class="cron-btn run" style="flex:1" onclick="submitSkillSave()">스킬 저장</button>
+          <button class="cron-btn" style="flex:1" onclick="toggleSkillForm()">취소</button>
+        </div>
+        <div id="skillFormError" style="font-size:11px;color:var(--accent);margin-top:6px;display:none"></div>
+      </div>
+      <div class="skills-list" id="skillsList"><div style="padding:12px;color:var(--muted);font-size:12px">불러오는 중...</div></div>
+    </div>
+    <!-- Memory panel -->
+    <div class="panel-view" id="panelMemory">
+      <div style="padding:8px 12px 4px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <span style="font-size:11px;color:var(--muted)">개인 기억</span>
+        <button class="cron-btn run" id="memEditBtn" style="padding:3px 8px;font-size:10px" onclick="toggleMemoryEdit()">&#9998; 편집</button>
+      </div>
+      <div class="memory-panel" id="memoryPanel"><div style="color:var(--muted);font-size:12px">불러오는 중...</div></div>
+      <!-- Memory edit form (hidden by default) -->
+      <div id="memoryEditForm" style="display:none;padding:8px 12px;border-top:1px solid var(--border);flex-shrink:0">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">편집 중: <span id="memEditSection">memory</span></div>
+        <textarea id="memEditContent" rows="10" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:11px;outline:none;resize:vertical;font-family:'SF Mono',ui-monospace,monospace;box-sizing:border-box;margin-bottom:6px;line-height:1.5"></textarea>
+        <div style="display:flex;gap:6px">
+          <button class="cron-btn run" style="flex:1" onclick="submitMemorySave()">저장</button>
+          <button class="cron-btn" style="flex:1" onclick="closeMemoryEdit()">취소</button>
+        </div>
+        <div id="memEditError" style="font-size:11px;color:var(--accent);margin-top:6px;display:none"></div>
+      </div>
+    </div>
+    <!-- Todo panel -->
+    <div class="panel-view" id="panelTodos">
+      <div style="padding:10px 12px 4px;font-size:11px;color:var(--muted);flex-shrink:0">현재 할 일 목록</div>
+      <div id="todoPanel" style="flex:1;overflow-y:auto;padding:8px 12px"></div>
+    </div>
+    <!-- Workspaces panel -->
+    <div class="panel-view" id="panelWorkspaces">
+      <div style="padding:10px 12px 4px;font-size:11px;color:var(--muted)">세션용 작업공간을 추가하고 전환하세요.</div>
+      <div style="flex:1;overflow-y:auto;padding:0 12px 12px" id="workspacesPanel"><div style="color:var(--muted);font-size:12px">불러오는 중...</div></div>
+    </div>
+    <!-- Profiles panel -->
+    <div class="panel-view" id="panelProfiles">
+      <div class="sidebar-section" style="padding-bottom:4px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--muted)">에이전트 프로필</div>
+        <button class="cron-btn run" style="padding:3px 8px;font-size:10px" onclick="toggleProfileForm()">+ 새 프로필</button>
+      </div>
+      <!-- Profile create form (hidden by default) -->
+      <div id="profileCreateForm" style="display:none;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <input id="profileFormName" placeholder="프로필 이름 (소문자, a-z 0-9 하이픈)" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:12px;outline:none;margin-bottom:6px;box-sizing:border-box">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-bottom:8px;cursor:pointer">
+          <input type="checkbox" id="profileFormClone" style="accent-color:var(--accent)"> 현재 활성 프로필 설정 복제
+        </label>
+        <div style="display:flex;gap:6px">
+          <button class="cron-btn run" style="flex:1" onclick="submitProfileCreate()">생성</button>
+          <button class="cron-btn" style="flex:1" onclick="toggleProfileForm()">취소</button>
+        </div>
+        <div id="profileFormError" style="font-size:11px;color:var(--accent);margin-top:6px;display:none"></div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:0 12px 12px" id="profilesPanel"><div style="color:var(--muted);font-size:12px">불러오는 중...</div></div>
+    </div>
+    <div class="panel-view" id="panelArtifacts">
+      <div class="sidebar-section" style="padding-bottom:4px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--muted)">아티팩트</div>
+        <button class="cron-btn run" style="padding:3px 8px;font-size:10px" id="btnAddArtifactSidebar">+ 새 아티팩트</button>
+      </div>
+      <div style="padding:0 12px 8px;display:flex;gap:6px">
+        <button class="cron-btn" style="flex:1" id="btnAiArtifactSidebar">✨ AI 생성</button>
+      </div>
+      <div class="skills-list" id="artifactListSidebar"><div style="padding:12px;color:var(--muted);font-size:12px">아직 아티팩트가 없습니다.</div></div>
+    </div>
+    <div class="panel-view" id="panelSetup">
+      <div class="sidebar-section" style="padding-bottom:4px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--muted)">Setup Packs</div>
+      </div>
+      <div style="padding:0 12px 8px" class="quick-actions-grid">
+        <button class="quick-action setup-pack" data-pack="obsidian-starter">📚 Obsidian Starter</button>
+        <button class="quick-action setup-pack" data-pack="sharenote-telegram">🔗 Share+Telegram</button>
+        <button class="quick-action setup-pack" data-pack="obsidian-power">⚙️ Obsidian Power</button>
+        <button class="quick-action setup-pack" data-pack="memory-sync">🧠 Memory Sync</button>
+      </div>
+      <div class="skills-list" id="setupPackHistorySidebar"><div style="padding:12px;color:var(--muted);font-size:12px">아직 실행한 setup pack 이 없습니다.</div></div>
+    </div>
+    <div class="panel-view" id="panelChecks">
+      <div class="sidebar-section" style="padding-bottom:4px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:11px;color:var(--muted)">Preflight</div>
+      </div>
+      <div style="padding:0 12px 8px;display:flex;gap:6px;flex-wrap:wrap">
+        <button class="cron-btn preflight-run" data-preflight="note">📝 Note</button>
+        <button class="cron-btn preflight-run" data-preflight="posting">✍️ Posting</button>
+        <button class="cron-btn preflight-run" data-preflight="cron">⏱️ Cron</button>
+      </div>
+      <div class="skills-list" id="preflightListSidebar"><div style="padding:12px;color:var(--muted);font-size:12px">점검 버튼을 눌러 결과를 확인하세요.</div></div>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="field-label" style="font-size:10px;letter-spacing:.07em;margin-bottom:4px">모델</div>
+      <select id="modelSelect">
+        <optgroup label="OpenAI">
+          <option value="openai/gpt-5.4-mini">GPT-5.4 Mini</option>
+          <option value="openai/gpt-4o">GPT-4o</option>
+          <option value="openai/o3">o3</option>
+          <option value="openai/o4-mini">o4-mini</option>
+        </optgroup>
+        <optgroup label="Anthropic">
+          <option value="anthropic/claude-sonnet-4.6">Claude Sonnet 4.6</option>
+          <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
+          <option value="anthropic/claude-haiku-3-5">Claude Haiku 3.5</option>
+        </optgroup>
+        <optgroup label="Other">
+          <option value="google/gemini-2.5-pro">Gemini 2.5 Pro</option>
+          <option value="deepseek/deepseek-chat-v3-0324">DeepSeek V3</option>
+          <option value="meta-llama/llama-4-scout">Llama 4 Scout</option>
+        </optgroup>
+      </select>
+      <div style="position:relative">
+        <div id="sidebarWsDisplay" style="display:flex;align-items:center;gap:7px;padding:0 0 8px;cursor:pointer;border-radius:8px;transition:background .15s" onclick="toggleWsDropdown()" title="Switch workspace">
+          <span style="font-size:14px;opacity:.7">&#128193;</span>
+          <div style="min-width:0;flex:1">
+            <div style="font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="sidebarWsName">작업공간</div>
+            <div style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px" id="sidebarWsPath"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted);flex-shrink:0">&#9662;</span>
+        </div>
+        <div class="ws-dropdown" id="wsDropdown"></div>
+      </div>
+      <div class="sidebar-actions">
+        <button class="sm-btn" id="btnDownload" title="마크다운으로 다운로드">&#8595; 대화록</button>
+        <button class="sm-btn" id="btnExportJSON" title="세션 전체를 JSON으로 내보내기">&#10092;/&#10093; JSON</button>
+        <button class="sm-btn" id="btnImportJSON" title="JSON 세션 가져오기">&#8593; 가져오기</button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none">
+      </div>
+    </div>
+  <div class="resize-handle" id="sidebarResize"></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <button class="mobile-hamburger" id="btnHamburger" onclick="toggleMobileSidebar()" title="메뉴">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div style="flex:1;min-width:0;overflow:hidden"><div class="topbar-title" id="topbarTitle">Hermes</div><div class="topbar-meta" id="topbarMeta">새 대화를 시작해보세요</div></div>
+      <div class="topbar-chips">
+        <div id="profileChipWrap" style="position:relative">
+          <div class="chip profile-chip" id="profileChip" onclick="toggleProfileDropdown()" title="프로필 전환" style="cursor:pointer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span id="profileChipLabel">default</span> &#9662;</div>
+          <div class="profile-dropdown" id="profileDropdown"></div>
+        </div>
+        <div class="chip model" id="modelChip">GPT-5.4 Mini</div>
+
+        <button class="chip clear-btn" id="btnClearConv" onclick="clearConversation()" title="이 대화의 메시지 전체 지우기" style="display:none">&#128465; 지우기</button>
+        <button class="chip gear-btn" id="btnSettings" onclick="toggleSettings()" title="설정">&#9881;</button>
+        <button class="chip mobile-files-btn" id="btnMobileFiles" onclick="toggleMobileFiles()" title="파일">&#128193;</button>
+      </div>
+    </div>
+    <div class="artifact-bar" id="artifactBar">
+      <div class="artifact-bar-inner">
+        <div class="artifact-bar-group">
+          <div class="artifact-bar-title">아티팩트 빠른 실행</div>
+          <div class="artifact-bar-actions">
+            <button class="artifact-action" data-artifact="obsidian-note">📝 옵시디언 노트 초안</button>
+            <button class="artifact-action" data-artifact="share-note">🔗 ShareNote 포함 노트</button>
+            <button class="artifact-action" data-artifact="posting-brief">✍️ /posting 브리프</button>
+            <button class="artifact-action" data-artifact="schedule-followup">⏱️ 후속 작업 예약</button>
+          </div>
+        </div>
+        <div class="artifact-bar-group workflow-group">
+          <div class="artifact-bar-title">원클릭 워크플로우</div>
+          <div class="artifact-bar-actions">
+            <button class="artifact-action primary" data-workflow="generate-note">⚡ 노트 생성</button>
+            <button class="artifact-action primary" data-workflow="generate-posting">⚡ 포스팅 브리프 생성</button>
+            <button class="artifact-action" data-workflow="save-memory">🧠 기억에 저장</button>
+            <button class="artifact-action" data-workflow="telegram-handoff">📣 텔레그램 핸드오프</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="artifact-shelf home-tools" id="artifactShelf">
+      <div class="artifact-shelf-inner">
+        <div class="artifact-shelf-head">
+          <div>
+            <div class="artifact-shelf-title">아티팩트</div>
+            <div class="artifact-shelf-sub">이 세션에서 만든 초안과 파일을 여기서 열고 삭제할 수 있습니다</div>
+          </div>
+          <div class="artifact-shelf-actions">
+            <button class="artifact-action primary" id="btnAddArtifact">＋ 아티팩트 추가</button>
+            <button class="artifact-action" id="btnAiArtifact">✨ AI로 아티팩트 만들기</button>
+          </div>
+        </div>
+        <div class="artifact-list" id="artifactList"></div>
+      </div>
+    </div>
+    <div class="artifact-shelf home-tools" id="setupPackShelf">
+      <div class="artifact-shelf-inner">
+        <div class="artifact-shelf-head">
+          <div>
+            <div class="artifact-shelf-title">Setup Packs</div>
+            <div class="artifact-shelf-sub">필수 스킬과 워크플로우를 원클릭으로 설치/설정하도록 도와줍니다</div>
+          </div>
+        </div>
+        <div class="quick-actions-grid">
+          <button class="quick-action setup-pack" data-pack="obsidian-starter">📚 Obsidian Starter Pack</button>
+          <button class="quick-action setup-pack" data-pack="sharenote-telegram">🔗 ShareNote + Telegram Pack</button>
+          <button class="quick-action setup-pack" data-pack="obsidian-power">⚙️ Obsidian Power Workflow</button>
+          <button class="quick-action setup-pack" data-pack="memory-sync">🧠 Memory Sync Pack</button>
+        </div>
+        <div class="artifact-list" id="setupPackHistory"></div>
+      </div>
+    </div>
+    <div class="artifact-shelf home-tools" id="preflightShelf">
+      <div class="artifact-shelf-inner">
+        <div class="artifact-shelf-head">
+          <div>
+            <div class="artifact-shelf-title">Preflight Validator</div>
+            <div class="artifact-shelf-sub">노트, 포스팅, 예약작업 전 최소 점검을 빠르게 실행합니다</div>
+          </div>
+          <div class="artifact-shelf-actions">
+            <button class="artifact-action preflight-run" data-preflight="note">📝 Note Check</button>
+            <button class="artifact-action preflight-run" data-preflight="posting">✍️ Posting Check</button>
+            <button class="artifact-action preflight-run" data-preflight="cron">⏱️ Cron Check</button>
+          </div>
+        </div>
+        <div class="artifact-list" id="preflightList"></div>
+      </div>
+    </div>
+    <div class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+      <div class="empty-logo">🦉</div>
+      <h2>무엇을 도와드릴까요?</h2>
+      <p>질문하기, 명령 실행, 파일 탐색, 예약 작업 관리까지 한곳에서 할 수 있습니다.</p>
+      <div class="personalization-card" id="personalizationCard" style="display:none"></div>
+      <div class="suggestion-grid">
+          <button class="suggestion" data-msg="이 작업공간에는 어떤 파일이 있어?">📁 이 작업공간에는 어떤 파일이 있어?</button>
+          <button class="suggestion" data-msg="오늘 예약된 작업이 뭐야?">📋 오늘 예약된 작업이 뭐야?</button>
+          <button class="suggestion" data-msg="작은 프로젝트 계획을 함께 세워줘.">🗺 작은 프로젝트 계획을 함께 세워줘.</button>
+        </div>
+        <div class="quick-actions">
+          <div class="quick-actions-title">빠른 작업</div>
+          <div class="quick-actions-grid">
+            <button class="quick-action" data-template="workspace-summary">📦 작업공간 요약</button>
+            <button class="quick-action" data-template="note-draft">📝 노트 초안 만들기</button>
+            <button class="quick-action" data-template="blog-post">✍️ 블로그 포스트 초안</button>
+            <button class="quick-action" data-template="schedule-task">⏱️ 예약 작업 만들기</button>
+          </div>
+        </div>
+      </div>
+      <div class="messages-inner" id="msgInner"></div>
+      <div id="liveToolCards" style="display:none;max-width:800px;margin:0 auto;width:100%;padding:0 24px;"></div>
+    </div>
+    <div class="reconnect-banner" id="reconnectBanner">
+      <span id="reconnectMsg">&#9888; 이전에 응답이 진행 중이었을 수 있습니다. 메시지를 다시 불러올까요?</span>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="reconnect-btn" onclick="dismissReconnect()">닫기</button>
+        <button class="reconnect-btn" onclick="refreshSession()">&#8635; 다시 불러오기</button>
+      </div>
+    </div>
+    <div class="approval-card" id="approvalCard">
+      <div class="approval-inner">
+        <div class="approval-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          위험한 명령 — 승인 필요
+        </div>
+        <div class="approval-desc" id="approvalDesc"></div>
+        <div class="approval-cmd" id="approvalCmd"></div>
+        <div class="approval-btns">
+          <button class="approval-btn once" onclick="respondApproval('once')">&#10003; 이번만 허용</button>
+          <button class="approval-btn session" onclick="respondApproval('session')">&#128274; 이 세션에서 허용</button>
+          <button class="approval-btn always" onclick="respondApproval('always')">&#9734; 항상 허용</button>
+          <button class="approval-btn deny" onclick="respondApproval('deny')">&#10005; 거부</button>
+        </div>
+      </div>
+    </div>
+    <!-- Activity bar: shows tool progress / status above composer (not inside input) -->
+    <div id="activityBar" style="display:none;max-width:800px;margin:0 auto;width:100%;padding:0 24px;">
+      <div id="activityBarInner" style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);font-size:12px;color:var(--muted);animation:fadeIn .15s ease;">
+        <span id="activityIcon" style="font-size:13px;opacity:.6">&#9881;</span>
+        <span id="activityText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button id="btnCancel" onclick="cancelStream()" style="display:none;background:rgba(233,69,96,.12);border:1px solid rgba(233,69,96,.35);color:#e94560;font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;cursor:pointer;flex-shrink:0;transition:background .15s" title="이 작업 취소">&#9632; 취소</button>
+        <button id="btnDismissStatus" onclick="setStatus('')" style="display:none;background:none;border:none;color:var(--muted);font-size:14px;line-height:1;cursor:pointer;padding:0 2px;opacity:.5;flex-shrink:0" title="닫기">&#x2715;</button>
+        <span id="activityDots" style="display:flex;gap:3px;align-items:center">
+          <span style="width:4px;height:4px;border-radius:50%;background:var(--blue);opacity:.3;animation:pulse 1.4s ease-in-out infinite"></span>
+          <span style="width:4px;height:4px;border-radius:50%;background:var(--blue);opacity:.3;animation:pulse 1.4s ease-in-out .22s infinite"></span>
+          <span style="width:4px;height:4px;border-radius:50%;background:var(--blue);opacity:.3;animation:pulse 1.4s ease-in-out .44s infinite"></span>
+        </span>
+      </div>
+    </div>
+    <div class="composer-wrap" id="composerWrap">
+      <div class="cmd-dropdown" id="cmdDropdown"></div>
+      <div class="composer-box" id="composerBox">
+        <div class="drop-hint" id="dropHint">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          파일을 여기에 놓아 작업공간에 업로드
+        </div>
+        <div class="attach-tray" id="attachTray"></div>
+        <div class="mic-status" id="micStatus" style="display:none"><span class="mic-dot"></span> 듣는 중…</div>
+        <textarea id="msg" rows="1" placeholder="구찌에게 메시지 보내기…"></textarea>
+        <div class="composer-footer">
+          <div class="composer-left">
+            <input type="file" id="fileInput" multiple accept="image/*,text/*,application/pdf,application/json,.md,.py,.js,.ts,.yaml,.yml,.toml,.csv,.sh,.txt,.log,.env" style="display:none">
+            <button class="icon-btn" id="btnAttach" title="파일 첨부">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+            <button class="icon-btn mic-btn" id="btnMic" title="Voice input" style="display:none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="1" width="6" height="12" rx="3"/>
+                <path d="M5 10a7 7 0 0 0 14 0"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+          </div>
+          <div class="ctx-indicator" id="ctxIndicator" style="display:none" title="Context window usage">
+            <span class="ctx-bar-wrap"><span class="ctx-bar" id="ctxBar"></span></span>
+            <span class="ctx-label" id="ctxLabel"></span>
+          </div>
+          <div class="composer-right">
+            <button class="send-btn" id="btnSend" title="Send message" style="display:none">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="upload-bar-wrap" id="uploadBarWrap"><div class="upload-bar" id="uploadBar"></div></div>
+      </div>
+    </div>
+  </main>
+  <aside class="rightpanel">
+    <div class="resize-handle" id="rightpanelResize"></div>
+    <div class="panel-header">
+      <span>Workspace</span>
+      <span class="git-badge" id="gitBadge" style="display:none"></span>
+      <div class="panel-actions">
+        <button class="panel-icon-btn" id="btnUpDir" title="Parent directory" onclick="navigateUp()" style="display:none">&#8593;</button>
+        <button class="panel-icon-btn" id="btnNewFile" title="New file" onclick="promptNewFile()">&#43;</button>
+        <button class="panel-icon-btn" id="btnNewFolder" title="New folder" onclick="promptNewFolder()">&#128193;</button>
+        <button class="panel-icon-btn" id="btnRefreshPanel" title="Refresh" onclick="if(S.session)loadDir(S.currentDir)">&#8635;</button>
+        <button class="panel-icon-btn close-preview" id="btnClearPreview" title="Close preview">&#10005;</button>
+      </div>
+    </div>
+    <div class="breadcrumb-bar" id="breadcrumbBar" style="display:none"></div>
+    <div class="file-tree" id="fileTree"></div>
+    <div class="workspace-empty" id="workspaceEmpty">
+      <div class="workspace-empty-icon">📂</div>
+      <div class="workspace-empty-title">작업공간 패널</div>
+      <div class="workspace-empty-text">
+        여기서는 현재 세션의 작업 파일을 탐색하고, 미리보고, 수정하고, 새 파일이나 폴더를 만들 수 있습니다.
+        코드 프로젝트, 메모 초안, 생성된 결과물, 첨부 파일을 한 곳에서 다루는 패널입니다.
+      </div>
+      <div class="workspace-empty-actions">
+        <button class="artifact-action" onclick="if(S.session)loadDir('.')">📁 루트 보기</button>
+        <button class="artifact-action" onclick="promptNewFile()">✍️ 새 파일</button>
+      </div>
+    </div>
+    <div class="preview-area" id="previewArea">
+      <div class="preview-path" id="previewPath">
+        <span id="previewPathText"></span>
+        <span class="preview-badge" id="previewBadge"></span>
+        <button id="btnDownloadFile" class="panel-icon-btn" style="margin-left:auto;font-size:12px;width:auto;padding:2px 8px" onclick="downloadFile(_previewCurrentPath)" title="Download file to your computer">&#8681; Download</button>
+        <button id="btnEditFile" class="panel-icon-btn" style="font-size:12px;width:auto;padding:2px 8px;display:none" onclick="toggleEditMode()">&#9998; Edit</button>
+      </div>
+      <pre class="preview-code" id="previewCode"></pre>
+      <div class="preview-img-wrap" id="previewImgWrap" style="display:none"><img class="preview-img" id="previewImg" src="" alt=""></div>
+      <div class="preview-md" id="previewMd" style="display:none"></div>
+      <textarea id="previewEditArea" style="display:none;flex:1;width:100%;background:var(--code-bg);color:#e2e8f0;border:1px solid var(--border2);border-radius:8px;padding:12px;font-family:'SF Mono',ui-monospace,monospace;font-size:12px;line-height:1.6;resize:none;outline:none" oninput="_previewDirty=true;updateEditBtn()"></textarea>
+    </div>
+  </aside>
+</div>
+<div class="artifact-modal-overlay" id="artifactModalOverlay" style="display:none">
+  <div class="artifact-modal">
+    <div class="artifact-modal-header">
+      <h3 style="margin:0;font-size:16px">아티팩트 만들기</h3>
+      <button class="panel-icon-btn" id="btnCloseArtifactModal" title="Close">&#10005;</button>
+    </div>
+    <div class="artifact-modal-body">
+      <div class="settings-field">
+        <label for="artifactType">유형</label>
+        <select id="artifactType" style="width:100%;padding:8px;background:var(--code-bg);color:var(--text);border:1px solid var(--border2);border-radius:6px">
+          <option value="note">Note</option>
+          <option value="posting">Posting Brief</option>
+          <option value="brief">Brief</option>
+          <option value="memo">Memo</option>
+          <option value="research">Research Brief</option>
+        </select>
+      </div>
+      <div class="settings-field">
+        <label for="artifactName">파일 이름</label>
+        <input id="artifactName" placeholder="예: draft-note.md" style="width:100%;padding:8px;background:var(--code-bg);color:var(--text);border:1px solid var(--border2);border-radius:6px" />
+      </div>
+      <div class="settings-field">
+        <label for="artifactSeed">초안 메모</label>
+        <textarea id="artifactSeed" rows="4" placeholder="무엇을 만들고 싶은지 간단히 적어주세요" style="width:100%;padding:8px;background:var(--code-bg);color:var(--text);border:1px solid var(--border2);border-radius:6px;resize:vertical"></textarea>
+      </div>
+      <div class="settings-field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="artifactUseAi" style="width:15px;height:15px;accent-color:var(--accent)">
+          AI 도움 프롬프트도 함께 준비
+        </label>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">체크하면 파일 생성 후 입력창에 AI 초안 생성 프롬프트도 자동으로 넣어줍니다.</div>
+      </div>
+      <div id="artifactModalError" style="display:none;color:var(--accent);font-size:12px;margin-top:4px"></div>
+    </div>
+    <div class="artifact-modal-footer">
+      <button class="artifact-action" id="btnArtifactCancel">취소</button>
+      <button class="artifact-action primary" id="btnArtifactCreate">생성</button>
+    </div>
+  </div>
+</div>
+<div class="settings-overlay" id="settingsOverlay" style="display:none">
+  <div class="settings-panel">
+    <div class="settings-header">
+      <h3 style="margin:0;font-size:16px">Settings</h3>
+      <button class="panel-icon-btn" onclick="_closeSettingsPanel()" title="Close">&#10005;</button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-field">
+        <label for="settingsModel">Default Model</label>
+        <select id="settingsModel" style="width:100%;padding:8px;background:var(--code-bg);color:var(--text);border:1px solid var(--border2);border-radius:6px"></select>
+      </div>
+      <div class="settings-field">
+        <label for="settingsWorkspace">Default Workspace</label>
+        <select id="settingsWorkspace" style="width:100%;padding:8px;background:var(--code-bg);color:var(--text);border:1px solid var(--border2);border-radius:6px"></select>
+      </div>
+      <div class="settings-field">
+        <label for="settingsSendKey">Send Key</label>
+        <select id="settingsSendKey" style="width:100%;padding:8px;background:var(--code-bg);color:var(--text);border:1px solid var(--border2);border-radius:6px">
+          <option value="enter">Enter (Shift+Enter for newline)</option>
+          <option value="ctrl+enter">Ctrl+Enter (Enter for newline)</option>
+        </select>
+      </div>
+      <div class="settings-field">
+        <label for="settingsTheme">테마</label>
+        <select id="settingsTheme" style="width:100%;padding:8px;background:var(--code-bg);color:var(--text);border:1px solid var(--border2);border-radius:6px" onchange="document.documentElement.dataset.theme=this.value;localStorage.setItem('hermes-theme',this.value)">
+          <option value="dark">Dark (기본)</option>
+          <option value="light">Light</option>
+          <option value="slate">Slate (차콜)</option>
+          <option value="solarized">Solarized Dark</option>
+          <option value="monokai">Monokai</option>
+          <option value="nord">Nord</option>
+          <option value="cherry-blossom">벚꽃</option>
+          <option value="neo-brutalism">네오브루탈리즘</option>
+          <option value="gucci">구찌 스타일</option>
+        </select>
+      </div>
+      <div class="settings-field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="settingsShowTokenUsage" style="width:15px;height:15px;accent-color:var(--accent)">
+          Show token usage after responses
+        </label>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Displays input/output token count below each assistant reply. Also toggled with <code>/usage</code>.</div>
+      </div>
+      <div class="settings-field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="settingsShowCliSessions" style="width:15px;height:15px;accent-color:var(--accent)">
+          Show CLI sessions in sidebar
+        </label>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Merges sessions from the Hermes CLI (state.db) into the session list. Click a CLI session to import it and continue the conversation.</div>
+      </div>
+      <div class="settings-field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="settingsSyncInsights" style="width:15px;height:15px;accent-color:var(--accent)">
+          Sync usage to /insights
+        </label>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Mirrors WebUI token usage to state.db so <code>hermes /insights</code> includes browser session data. Off by default.</div>
+      </div>
+      <div class="settings-field" style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px">
+        <label for="settingsPassword">Access Password</label>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Enter a new password to set or change it. Leave blank to keep current setting.</div>
+        <input type="password" id="settingsPassword" placeholder="Enter new password…" style="width:100%;padding:8px;background:var(--code-bg);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-size:13px">
+      </div>
+      <button class="sm-btn" onclick="saveSettings()" style="margin-top:12px;width:100%;padding:8px;font-weight:600">Save Settings</button>
+      <button class="sm-btn" id="btnDisableAuth" onclick="disableAuth()" style="margin-top:6px;width:100%;padding:8px;font-weight:600;color:#e8a030;border-color:rgba(232,160,48,.3);display:none">Disable Auth</button>
+      <button class="sm-btn" id="btnSignOut" onclick="signOut()" style="margin-top:6px;width:100%;padding:8px;font-weight:600;color:var(--accent);border-color:rgba(233,69,96,.3);display:none">Sign Out</button>
+    </div>
+  </div>
+</div>
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+  <button class="mobile-nav-btn active" data-panel="chat" onclick="mobileSwitchPanel('chat')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span>Chat</span>
+  </button>
+  <button class="mobile-nav-btn" data-panel="tasks" onclick="mobileSwitchPanel('tasks')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Tasks</span>
+  </button>
+  <button class="mobile-nav-btn" data-panel="skills" onclick="mobileSwitchPanel('skills')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    <span>Skills</span>
+  </button>
+  <button class="mobile-nav-btn" data-panel="memory" onclick="mobileSwitchPanel('memory')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.2 6H8.2C6.3 13.7 5 11.5 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="17" x2="15" y2="17"/><line x1="10" y1="20" x2="14" y2="20"/></svg>
+    <span>Memory</span>
+  </button>
+  <button class="mobile-nav-btn" data-panel="workspaces" onclick="mobileSwitchPanel('workspaces')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h8l2 2h10v14H2z"/></svg>
+    <span>Spaces</span>
+  </button>
+</nav>
+<div class="toast" id="toast"></div>
+<script src="/static/ui.js?v=20260406a"></script>
+<script src="/static/workspace.js?v=20260406a"></script>
+<script src="/static/sessions.js?v=20260406a"></script>
+<script src="/static/commands.js?v=20260406a"></script>
+<script src="/static/messages.js?v=20260406a"></script>
+<script src="/static/panels.js?v=20260406a"></script>
+<script src="/static/boot.js?v=20260406a"></script>
+</body>
+</html>
