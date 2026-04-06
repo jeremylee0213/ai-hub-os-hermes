@@ -14,6 +14,7 @@ If Obsidian is your bookshelf, Hermes for Web is the desk where you turn scatter
 
 This fork focuses on:
 - Korean-first UX
+- Korean as the default UI language/tone on first launch
 - beginner-friendly workflow buttons
 - personalized startup based on each user's Hermes memory
 - local + remote model orchestration (Darwin + GPT family)
@@ -415,6 +416,7 @@ Additional docs:
 - `docs/promo-kit-ko.md` — Korean launch / beta / X copy set
 - `docs/install-with-hermes.md` — one-prompt install guide for Hermes CLI or bot
 - `docs/full-install-from-web.md` — beginner path from zero Hermes install to WebUI
+- `docs/final-release-checklist.md` — final polish checklist before wider sharing
 
 ---
 
