@@ -747,6 +747,7 @@ _SETTINGS_DEFAULTS = {
     'show_cli_sessions': False,  # merge CLI sessions from state.db into the sidebar
     'sync_to_insights': False,  # mirror WebUI token usage to state.db for /insights
     'theme': 'cherry-blossom',  # active UI theme name (no enum gate -- allows custom themes)
+    'bot_name': 'Hermes',  # display name / nickname for the assistant UI
     'password_hash': None,  # SHA-256 hash; None = auth disabled
 }
 

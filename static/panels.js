@@ -1127,6 +1127,8 @@ function _markSettingsDirty(){
 async function loadSettingsPanel(){
   try{
     const settings=await api('/api/settings');
+    const botNameInput=$('settingsBotName');
+    if(botNameInput){botNameInput.value=settings.bot_name||'Hermes';botNameInput.addEventListener('input',_markSettingsDirty,{once:false});}
     // Populate model dropdown from /api/models
     const modelSel=$('settingsModel');
     if(modelSel){
@@ -1192,6 +1194,7 @@ async function loadSettingsPanel(){
 }
 
 async function saveSettings(andClose){
+  const botName=(($('settingsBotName')||{}).value||'').trim();
   const model=($('settingsModel')||{}).value;
   const workspace=($('settingsWorkspace')||{}).value;
   const sendKey=($('settingsSendKey')||{}).value;
@@ -1200,6 +1203,7 @@ async function saveSettings(andClose){
   const pw=($('settingsPassword')||{}).value;
   const theme=($('settingsTheme')||{}).value||'dark';
   const body={};
+  if(botName) body.bot_name=botName;
   if(model) body.default_model=model;
   if(workspace) body.default_workspace=workspace;
   if(sendKey) body.send_key=sendKey;

@@ -503,7 +503,8 @@ const SETUP_PACK_TEMPLATES={
   'obsidian-starter':'내 환경에서 Obsidian Starter Pack 을 설치해줘. Obsidian vault 확인, note 작성에 필요한 기본 도구/스킬 점검, Obsidian 친화 markdown workflow 확인까지 진행해줘. 무엇을 설치/설정했는지 마지막에 요약해줘.',
   'sharenote-telegram':'ShareNote + Telegram Publishing Pack 을 설치해줘. Obsidian ShareNote 플러그인/Advanced URI/공유 링크 생성 도우미/텔레그램 전달 흐름을 점검하고 설정해줘. 환경별 승인 필요한 단계가 있으면 설명하고 진행해줘.',
   'obsidian-power':'Obsidian Power Workflow Pack 을 설치해줘. Obsidian note 작성, posting, ShareNote 생성, Telegram handoff 까지 이어지는 범용 워크플로우를 점검/설정하고 최종 사용법을 정리해줘.',
-  'memory-sync':'Memory Sync Pack 을 점검해줘. WebUI, CLI, Telegram 간에 이어서 작업하기 좋은 memory/workflow 규칙을 확인하고, 필요한 공유 기억/핸드오프 사용법을 정리해줘.'
+  'memory-sync':'Memory Sync Pack 을 점검해줘. WebUI, CLI, Telegram 간에 이어서 작업하기 좋은 memory/workflow 규칙을 확인하고, 필요한 공유 기억/핸드오프 사용법을 정리해줘.',
+  'telegram-onboarding':'Hermes Telegram onboarding pack 을 실행해줘. 텔레그램에서 Hermes 봇을 아직 써보지 않은 사용자도 쉽게 시작할 수 있도록 필요한 설정, 계정 연결, 기본 사용 흐름, 점검 항목을 단계별로 정리하고 가능한 부분은 직접 세팅해줘. 마지막에는 초보자용 사용 가이드를 짧게 써줘.'
 };
 document.querySelectorAll('.setup-pack').forEach(btn=>{
   btn.onclick=async()=>{
@@ -605,6 +606,20 @@ async function loadPersonalizationCard(){
   }
 }
 
+async function applyBotName(){
+  try{
+    const settings=await api('/api/settings');
+    const name=(settings.bot_name||'Hermes').trim() || 'Hermes';
+    const titleEl=$('topbarTitle');
+    if(titleEl && (!$('msgInner') || !$('msgInner').children.length)) titleEl.textContent=name;
+    document.querySelectorAll('.assistant-name-dynamic').forEach(el=>el.textContent=name);
+    const msgBox=$('msg');
+    if(msgBox) msgBox.placeholder=`${name}에게 메시지 보내기…`;
+    const meta=$('topbarMeta');
+    if(meta && (!$('msgInner') || !$('msgInner').children.length)) meta.textContent=`${name}와 새 대화를 시작해보세요`;
+  }catch(e){}
+}
+
 // Boot: restore last session or start fresh
 // ── Resizable panels ──────────────────────────────────────────────────────
 (function(){
@@ -664,6 +679,7 @@ async function loadPersonalizationCard(){
   if(profileLabel) profileLabel.textContent=S.activeProfile||'default';
   // Fetch available models from server and populate dropdown dynamically
   await populateModelDropdown();
+  await applyBotName();
   await loadPersonalizationCard();
   // Restore last-used model preference
   const savedModel=localStorage.getItem('hermes-webui-model');

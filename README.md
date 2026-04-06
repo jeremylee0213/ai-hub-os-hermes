@@ -6,8 +6,6 @@
 [![YouTube](https://img.shields.io/badge/YouTube-배움의%20달인-ff4b5c?style=for-the-badge&logo=youtube)](https://www.youtube.com/@%EB%B0%B0%EC%9B%80%EC%9D%98%EB%8B%AC%EC%9D%B8-p5v)
 [![X](https://img.shields.io/badge/X-@reallygood83-111111?style=for-the-badge&logo=x)](https://x.com/reallygood83)
 
-한국어 안내: [README.ko.md](README.ko.md)
-
 Hermes for Web is a browser workbench for Hermes Agent.
 
 If Hermes CLI is your engine room, Hermes for Web is the cockpit.
@@ -97,6 +95,10 @@ Current packs include:
 - ShareNote + Telegram Pack
 - Obsidian Power Workflow
 - Memory Sync Pack
+- Telegram Onboarding Pack
+
+If someone has never used Hermes before, Telegram Onboarding Pack should act like a gentle first guide:
+not “here are 17 settings,” but “here is the next small step.”
 
 ### 4. Artifacts
 
