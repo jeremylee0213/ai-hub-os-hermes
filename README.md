@@ -293,6 +293,9 @@ Artifacts are intentionally flexible.
 The built-in types are examples, not a cage.
 Users can now choose a custom artifact type when the default categories do not fit their work.
 
+The quick artifact shortcut for `/posting brief` was intentionally removed from the top quick-action strip
+to keep the primary surface simpler and less crowded.
+
 ---
 
 ## Preflight Validator

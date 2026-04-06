@@ -541,11 +541,20 @@ const SETUP_PACK_DESCRIPTIONS={
   'last30days':'최근 30일간 X/Reddit 반응 조사를 빠르게 시작하는 연구 팩',
   'autoresearch':'질문을 반복 조사/심화 탐색 workflow 로 키우는 리서치 팩'
 };
+const SETUP_PACK_DETAILS={
+  'obsidian-starter':{title:'Obsidian Starter',who:'Obsidian 중심으로 Hermes 를 시작하려는 사용자',outcome:['노트 workflow 점검','Obsidian 친화 markdown 흐름 정리','기본 note 작성 스타트']},
+  'sharenote-telegram':{title:'Share+Telegram',who:'노트를 링크로 공유하고 Telegram 으로 이어가고 싶은 사용자',outcome:['공유 링크 생성 흐름 점검','Telegram handoff 흐름 정리','발행/공유 workflow 시작']},
+  'obsidian-power':{title:'Obsidian Power',who:'노트, posting, 공유까지 하나의 흐름으로 쓰는 파워 유저',outcome:['노트→posting→ShareNote 흐름 정리','콘텐츠 운영형 workflow 점검','고급 사용 예시 확보']},
+  'memory-sync':{title:'Memory Sync',who:'CLI / WebUI / Telegram 사이 기억 이어짐이 중요한 사용자',outcome:['handoff 감각 정리','공유 기억 규칙 점검','표면 간 연속성 강화']},
+  'telegram-onboarding':{title:'Telegram Onboarding',who:'Hermes Telegram 을 아직 안 써본 초보 사용자',outcome:['첫 사용 흐름 이해','필요 설정 점검','첫 메시지 가이드 확보']},
+  'last30days':{title:'last30days',who:'최근 30일간 X/Reddit 반응 조사를 빠르게 하고 싶은 사용자',outcome:['x/reddit/both 사용법 이해','반응 조사 워크플로우 시작','리서치 입력 예시 확보']},
+  'autoresearch':{title:'AutoResearch',who:'질문 하나를 반복 조사/심화 탐색 흐름으로 키우고 싶은 사용자',outcome:['조사 워크플로우 틀 확보','다음 탐색 포인트 설계','note/brief 로 연결하기 쉬운 출력 확보']}
+};
 document.querySelectorAll('.setup-pack').forEach(btn=>{
   btn.dataset.desc = SETUP_PACK_DESCRIPTIONS[btn.dataset.pack] || '이 setup pack 이 하는 일을 설명합니다.';
-});
-document.querySelectorAll('.setup-pack').forEach(btn=>{
+  btn.onmouseenter=()=>renderSetupPackDetail(btn.dataset.pack);
   btn.onclick=async()=>{
+    renderSetupPackDetail(btn.dataset.pack);
     const key=btn.dataset.pack;
     const text=SETUP_PACK_TEMPLATES[key]||'';
     if(!text)return;
@@ -558,6 +567,13 @@ document.querySelectorAll('.setup-pack').forEach(btn=>{
     await send();
   };
 });
+function renderSetupPackDetail(key){
+  const detail=SETUP_PACK_DETAILS[key];
+  const wraps=[$('setupPackDetail'), $('setupPackDetailSidebar')].filter(Boolean);
+  if(!wraps.length || !detail) return;
+  const html=`<div class="setup-pack-detail-title">${esc(detail.title)}</div><div class="setup-pack-detail-meta">추천 대상: ${esc(detail.who)}</div><div>이 팩을 실행하면 보통 아래 같은 결과를 기대할 수 있습니다.</div><ul>${detail.outcome.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  wraps.forEach(w=>{w.innerHTML=html;w.style.display='block';});
+}
 async function rerunSetupPack(key){
   const text=SETUP_PACK_TEMPLATES[key]||'';
   if(!text)return;
