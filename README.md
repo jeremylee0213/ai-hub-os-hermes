@@ -96,6 +96,8 @@ Current packs include:
 - Obsidian Power Workflow
 - Memory Sync Pack
 - Telegram Onboarding Pack
+- last30days Pack
+- AutoResearch Pack
 
 If someone has never used Hermes before, Telegram Onboarding Pack should act like a gentle first guide:
 not “here are 17 settings,” but “here is the next small step.”

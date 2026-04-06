@@ -473,6 +473,9 @@
   .artifact-mini-btn:hover{background:var(--hover-bg);}
   .artifact-empty{padding:12px;border:1px dashed var(--border2);border-radius:10px;color:var(--muted);font-size:12px;background:rgba(255,255,255,.02);}
   .setup-pack-help{margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(124,185,255,.06);border:1px dashed rgba(124,185,255,.22);font-size:12px;line-height:1.6;color:var(--muted);}
+  .quick-action.setup-pack{position:relative;}
+  .quick-action.setup-pack::after{content:attr(data-desc);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);min-width:220px;max-width:280px;padding:8px 10px;border-radius:10px;background:var(--surface);border:1px solid var(--border2);box-shadow:0 10px 24px rgba(0,0,0,.18);font-size:11px;line-height:1.5;color:var(--text);opacity:0;pointer-events:none;transition:opacity .14s ease, transform .14s ease;white-space:normal;z-index:60;}
+  .quick-action.setup-pack:hover::after{opacity:1;transform:translateX(-50%) translateY(-2px);}
   .preflight-pass{border-left:4px solid #22c55e;}
   .preflight-warn{border-left:4px solid #f59e0b;}
   .preflight-fail{border-left:4px solid #ef4444;}

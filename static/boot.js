@@ -528,8 +528,22 @@ const SETUP_PACK_TEMPLATES={
   'sharenote-telegram':'ShareNote + Telegram Publishing Pack 을 설치해줘. Obsidian ShareNote 플러그인/Advanced URI/공유 링크 생성 도우미/텔레그램 전달 흐름을 점검하고 설정해줘. 환경별 승인 필요한 단계가 있으면 설명하고 진행해줘.',
   'obsidian-power':'Obsidian Power Workflow Pack 을 설치해줘. Obsidian note 작성, posting, ShareNote 생성, Telegram handoff 까지 이어지는 범용 워크플로우를 점검/설정하고 최종 사용법을 정리해줘.',
   'memory-sync':'Memory Sync Pack 을 점검해줘. WebUI, CLI, Telegram 간에 이어서 작업하기 좋은 memory/workflow 규칙을 확인하고, 필요한 공유 기억/핸드오프 사용법을 정리해줘.',
-  'telegram-onboarding':'Hermes Telegram onboarding pack 을 실행해줘. 텔레그램에서 Hermes 봇을 아직 써보지 않은 사용자도 쉽게 시작할 수 있도록 필요한 설정, 계정 연결, 기본 사용 흐름, 점검 항목을 단계별로 정리하고 가능한 부분은 직접 세팅해줘. 마지막에는 초보자용 사용 가이드를 짧게 써줘.'
+  'telegram-onboarding':'Hermes Telegram onboarding pack 을 실행해줘. 텔레그램에서 Hermes 봇을 아직 써보지 않은 사용자도 쉽게 시작할 수 있도록 필요한 설정, 계정 연결, 기본 사용 흐름, 점검 항목을 단계별로 정리하고 가능한 부분은 직접 세팅해줘. 마지막에는 초보자용 사용 가이드를 짧게 써줘.',
+  'last30days':'last30days research pack 을 설치/점검해줘. 사용자가 최근 30일간 X/Reddit 기반 반응 조사를 쉽게 시작할 수 있도록 last30days 사용법, 소스 선택법(x/reddit/both), 대표 예시, 필수 전제 조건을 정리하고 가능한 환경 점검을 진행해줘.',
+  'autoresearch':'AutoResearch pack 을 설치/점검해줘. 사용자가 조사 질문을 넣으면 리서치 흐름을 반복 실행하거나 심화 탐색할 수 있도록 기본 구조, 추천 워크플로우, 필요한 도구/전제 조건, 결과 정리 방식을 설명하고 가능한 환경 점검을 진행해줘.'
 };
+const SETUP_PACK_DESCRIPTIONS={
+  'obsidian-starter':'Obsidian 중심 note workflow 를 시작하는 기본 세팅 팩',
+  'sharenote-telegram':'공유 링크 생성과 Telegram 전달 흐름을 붙이는 발행 팩',
+  'obsidian-power':'노트, posting, ShareNote, handoff 까지 묶는 고급 Obsidian 팩',
+  'memory-sync':'WebUI/CLI/Telegram 사이 기억과 handoff 감각을 맞추는 팩',
+  'telegram-onboarding':'Hermes Telegram 을 처음 쓰는 사람을 위한 입문 팩',
+  'last30days':'최근 30일간 X/Reddit 반응 조사를 빠르게 시작하는 연구 팩',
+  'autoresearch':'질문을 반복 조사/심화 탐색 workflow 로 키우는 리서치 팩'
+};
+document.querySelectorAll('.setup-pack').forEach(btn=>{
+  btn.dataset.desc = SETUP_PACK_DESCRIPTIONS[btn.dataset.pack] || '이 setup pack 이 하는 일을 설명합니다.';
+});
 document.querySelectorAll('.setup-pack').forEach(btn=>{
   btn.onclick=async()=>{
     const key=btn.dataset.pack;
