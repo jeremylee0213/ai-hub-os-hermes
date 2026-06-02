@@ -20,7 +20,7 @@
 macOS / Linux / WSL:
 
 ```bash
-git clone https://github.com/aihubos/ai-hub-os-hermes.git
+git clone https://github.com/jeremylee0213/ai-hub-os-hermes.git
 cd ai-hub-os-hermes
 ./install.sh
 ```
@@ -28,7 +28,7 @@ cd ai-hub-os-hermes
 Windows PowerShell:
 
 ```powershell
-git clone https://github.com/aihubos/ai-hub-os-hermes.git
+git clone https://github.com/jeremylee0213/ai-hub-os-hermes.git
 cd ai-hub-os-hermes
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
@@ -39,7 +39,7 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 http://localhost:8788
 ```
 
-주의: Telegram 봇 토큰과 사용자 ID 같은 비밀값은 자동 생성할 수 없습니다. 설치기는 `.env`에 입력 위치를 만들어두고, 마지막에 어디를 채우면 되는지 알려줍니다.
+주의: Telegram 봇 토큰과 사용자 ID 같은 비밀값은 설치기가 대신 만들 수 없습니다. 대신 설치 중 BotFather 발급법을 단계별로 보여주고, 링크를 열고, 발급받은 토큰을 숨김 입력으로 안전하게 `.env`에 저장할 수 있습니다.
 
 Hermes for Web 은 Hermes Agent 를 위한 브라우저 작업실입니다.
 
@@ -252,7 +252,7 @@ Preflight 는 비행기 이륙 전 체크리스트 같은 기능입니다.
 ### 로컬에서 바로 실행
 
 ```bash
-git clone https://github.com/aihubos/ai-hub-os-hermes.git
+git clone https://github.com/jeremylee0213/ai-hub-os-hermes.git
 cd ai-hub-os-hermes
 ./start.sh 8788
 ```
@@ -383,7 +383,7 @@ README 상단 배지에도 같은 링크가 있습니다.
 ## Private repo 업로드 전 체크 포인트
 
 추천 저장소:
-- https://github.com/aihubos/ai-hub-os-hermes
+- https://github.com/jeremylee0213/ai-hub-os-hermes
 
 처음엔 private 으로 올리고,
 그 다음 깨끗한 머신에서 검증 후 공개 여부를 결정하는 게 좋습니다.

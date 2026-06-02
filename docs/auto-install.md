@@ -20,6 +20,9 @@
 - Web UI Python venv 생성 및 requirements 설치
 - Web UI 실행 스크립트 생성
 - Telegram Gateway `.env` 입력칸 준비
+- BotFather 발급법을 화면에 단계별로 안내
+- BotFather / userinfobot 링크 자동 열기
+- Telegram Bot Token 숨김 입력 및 `.env` 저장
 - 기본 health check
 
 ## 실행 방법
@@ -27,7 +30,7 @@
 ### macOS / Linux / WSL
 
 ```bash
-git clone https://github.com/aihubos/ai-hub-os-hermes.git
+git clone https://github.com/jeremylee0213/ai-hub-os-hermes.git
 cd ai-hub-os-hermes
 ./install.sh
 ```
@@ -35,7 +38,7 @@ cd ai-hub-os-hermes
 ### Windows PowerShell
 
 ```powershell
-git clone https://github.com/aihubos/ai-hub-os-hermes.git
+git clone https://github.com/jeremylee0213/ai-hub-os-hermes.git
 cd ai-hub-os-hermes
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
@@ -46,6 +49,12 @@ Codex나 다른 Agent가 기본값으로 자동 실행해야 할 때:
 
 ```bash
 python3 install.py --yes
+```
+
+`--yes`는 비밀값 입력이 필요한 Telegram wizard는 건너뜁니다. Telegram 단계까지 강제로 띄우려면:
+
+```bash
+python3 install.py --yes --telegram
 ```
 
 값을 지정하려면:
@@ -84,22 +93,35 @@ http://localhost:8788
 
 ## Telegram Gateway 준비
 
-Telegram은 보안상 완전 자동화할 수 없습니다.
+Telegram은 보안상 100% 무인 자동화할 수 없습니다.
+하지만 설치기는 발급법을 화면에 하나씩 보여주고, 필요한 링크를 열고, 발급받은 토큰을 숨김 입력으로 안전하게 저장합니다.
 
 자동으로 할 수 있는 것:
 
 - Hermes profile `.env` 생성
 - `TELEGRAM_BOT_TOKEN=` 입력칸 준비
 - `TELEGRAM_ALLOWED_USERS=` 입력칸 준비
+- BotFather 단계별 안내 출력
+- `https://t.me/BotFather` 열기
+- `https://t.me/userinfobot` 열기
+- Bot Token 숨김 입력
+- Telegram 사용자 ID 저장
 - Gateway 실행 스크립트 생성
 
 사용자가 직접 해야 하는 것:
 
 1. Telegram에서 `@BotFather`로 봇 생성
-2. 받은 토큰을 profile `.env`의 `TELEGRAM_BOT_TOKEN=`에 입력
-3. `@userinfobot` 등으로 숫자 사용자 ID 확인
-4. `TELEGRAM_ALLOWED_USERS=`에 사용자 ID 입력
-5. 생성된 `start-gateway` 스크립트 실행
+2. BotFather가 발급한 토큰을 복사
+3. 설치기의 숨김 입력칸에 붙여넣기
+4. `@userinfobot` 등으로 숫자 사용자 ID 확인
+5. 설치기에 사용자 ID 입력
+6. 생성된 `start-gateway` 스크립트 실행
+
+Telegram wizard만 다시 실행하려면:
+
+```bash
+python3 install.py --skip-hermes-install --telegram
+```
 
 ## 설계상 제한
 

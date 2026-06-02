@@ -3,6 +3,8 @@ param(
     [string]$AgentName,
     [string]$RepoUrl,
     [switch]$SkipHermesInstall,
+    [switch]$Telegram,
+    [switch]$SkipTelegram,
     [switch]$Yes
 )
 
@@ -31,6 +33,8 @@ if ($InstallPath) { $argsList += @("--install-path", $InstallPath) }
 if ($AgentName) { $argsList += @("--agent-name", $AgentName) }
 if ($RepoUrl) { $argsList += @("--repo-url", $RepoUrl) }
 if ($SkipHermesInstall) { $argsList += "--skip-hermes-install" }
+if ($Telegram) { $argsList += "--telegram" }
+if ($SkipTelegram) { $argsList += "--skip-telegram" }
 if ($Yes) { $argsList += "--yes" }
 
 if ($Python -eq "py -3") {

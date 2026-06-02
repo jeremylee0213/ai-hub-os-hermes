@@ -12,17 +12,17 @@ installer.
 from __future__ import annotations
 
 import argparse
+import getpass
 import os
 import platform
 import re
-import shutil
 import subprocess
 import sys
-import time
 import urllib.request
+import webbrowser
 from pathlib import Path
 
-REPO_URL_DEFAULT = "https://github.com/aihubos/ai-hub-os-hermes.git"
+REPO_URL_DEFAULT = "https://github.com/jeremylee0213/ai-hub-os-hermes.git"
 HERMES_UNIX_INSTALL = "https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh"
 HERMES_WIN_INSTALL = "https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.ps1"
 DEFAULT_PORT = 8788
@@ -109,6 +109,42 @@ def ask_path(prompt: str, default: Path) -> Path:
 def ask_text(prompt: str, default: str) -> str:
     answer = input(f"{prompt} [{default}]: ").strip()
     return answer or default
+
+
+def ask_yes_no(prompt: str, default: bool = True) -> bool:
+    suffix = "Y/n" if default else "y/N"
+    answer = input(f"{prompt} [{suffix}]: ").strip().lower()
+    if not answer:
+        return default
+    return answer in {"y", "yes", "1", "true", "t", "네", "예", "ㅇ", "응"}
+
+
+def set_env_value(path: Path, key: str, value: str) -> None:
+    """Set KEY=value in an env file without printing secrets."""
+    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    pattern = re.compile(rf"^\s*#?\s*{re.escape(key)}\s*=")
+    new_line = f"{key}={value}"
+    replaced = False
+    for i, line in enumerate(lines):
+        if pattern.match(line):
+            lines[i] = new_line
+            replaced = True
+            break
+    if not replaced:
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.append(new_line)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def validate_telegram_token(token: str) -> bool:
+    # Official tokens normally look like 123456789:AA...; keep validation loose
+    # enough for future Telegram changes while catching obvious paste mistakes.
+    return bool(re.match(r"^\d{5,}:[A-Za-z0-9_-]{20,}$", token.strip()))
+
+
+def validate_telegram_user_ids(user_ids: str) -> bool:
+    return bool(re.match(r"^-?\d+(,-?\d+)*$", user_ids.replace(" ", "")))
 
 
 def ensure_python() -> str:
@@ -232,8 +268,8 @@ def ensure_profile_env(profile_home: Path) -> None:
         "TELEGRAM_BOT_TOKEN",
         """
 # Telegram Gateway 준비값
-# 1) Telegram에서 @BotFather 로 봇을 만들고 토큰을 넣으세요.
-# 2) @userinfobot 등으로 내 숫자 ID를 확인해 TELEGRAM_ALLOWED_USERS에 넣으세요.
+# 설치기가 BotFather 발급 절차를 화면에 단계별로 안내하고,
+# 토큰/사용자 ID는 숨김 입력으로 여기에 저장할 수 있습니다.
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_ALLOWED_USERS=
 # TELEGRAM_HOME_CHANNEL=
@@ -329,6 +365,94 @@ def health_check(repo_dir: Path, venv_python: Path) -> bool:
     return code == 0
 
 
+def print_telegram_steps(agent_name: str) -> None:
+    bot_username_hint = re.sub(r"[^a-zA-Z0-9_]", "_", agent_name).strip("_") or "my_hermes"
+    if not bot_username_hint.lower().endswith("bot"):
+        bot_username_hint = f"{bot_username_hint}_bot"
+    print("\n========================================")
+    print("Telegram BotFather semi-auto setup")
+    print("========================================")
+    print("이 단계는 Telegram 정책상 사용자가 직접 확인해야 합니다.")
+    print("설치기는 화면 안내, 링크 열기, 토큰 숨김 저장까지만 자동화합니다.\n")
+    print("1) Telegram 앱 또는 웹에서 @BotFather 대화를 엽니다.")
+    print("   링크: https://t.me/BotFather")
+    print("2) BotFather에게 아래 명령을 보냅니다.")
+    print("   /newbot")
+    print("3) bot display name을 입력합니다. 예:")
+    print(f"   {agent_name} Hermes")
+    print("4) bot username을 입력합니다. 반드시 bot으로 끝나야 합니다. 예:")
+    print(f"   {bot_username_hint}")
+    print("5) BotFather가 보내주는 HTTP API token을 복사합니다.")
+    print("   형식 예: 123456789:AA...  (이 값은 비밀번호처럼 취급하세요.)")
+    print("6) 다음 입력칸에 token을 붙여넣습니다. 화면에는 표시되지 않습니다.")
+    print("7) 내 Telegram 숫자 ID도 입력합니다.")
+    print("   모르면 https://t.me/userinfobot 에서 /start 후 id를 확인하세요.\n")
+
+
+def open_telegram_links() -> None:
+    for url in ("https://t.me/BotFather", "https://t.me/userinfobot"):
+        try:
+            webbrowser.open(url)
+            log(f"Opened: {url}")
+        except Exception:
+            warn(f"Could not open browser automatically. Open manually: {url}")
+
+
+def telegram_wizard(profile_home: Path, agent_name: str, *, assume_yes: bool = False, force: bool = False) -> bool:
+    if not force and assume_yes:
+        log("Skipping interactive Telegram token entry in --yes mode. Use --telegram to force the wizard.")
+        return False
+    if not force:
+        if not ask_yes_no("Telegram bot 발급/저장을 지금 진행할까요?", True):
+            print("Telegram 단계는 건너뜁니다. 나중에 다시 실행: python install.py --skip-hermes-install --telegram")
+            return False
+
+    print_telegram_steps(agent_name)
+    if ask_yes_no("BotFather / userinfobot 링크를 브라우저로 열까요?", True):
+        open_telegram_links()
+
+    input("BotFather에서 token을 복사했으면 Enter를 누르세요...")
+    token = ""
+    while not token:
+        token = getpass.getpass("Telegram Bot Token (hidden): ").strip()
+        if not token:
+            if ask_yes_no("토큰 없이 넘어갈까요?", False):
+                return False
+            continue
+        if not validate_telegram_token(token):
+            warn("토큰 형식이 일반적인 Telegram Bot Token과 다릅니다.")
+            if not ask_yes_no("그래도 저장할까요?", False):
+                token = ""
+
+    user_ids = ""
+    while not user_ids:
+        user_ids = input("Telegram allowed user ID 숫자 입력, 여러 명이면 쉼표로 구분: ").strip().replace(" ", "")
+        if not user_ids:
+            if ask_yes_no("사용자 ID 없이 토큰만 저장할까요?", False):
+                break
+            continue
+        if not validate_telegram_user_ids(user_ids):
+            warn("사용자 ID는 숫자여야 합니다. 여러 개는 123,456 형태로 입력하세요.")
+            user_ids = ""
+
+    env_path = profile_home / ".env"
+    set_env_value(env_path, "TELEGRAM_BOT_TOKEN", token)
+    if user_ids:
+        set_env_value(env_path, "TELEGRAM_ALLOWED_USERS", user_ids)
+    print("\nTelegram 값 저장 완료:")
+    print(f"  {env_path}")
+    print("토큰은 화면에 다시 출력하지 않았습니다.")
+    return True
+
+
+def telegram_ready(profile_home: Path) -> bool:
+    env_path = profile_home / ".env"
+    text = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
+    token_ok = bool(re.search(r"^TELEGRAM_BOT_TOKEN=\S+", text, flags=re.MULTILINE))
+    users_ok = bool(re.search(r"^TELEGRAM_ALLOWED_USERS=\S+", text, flags=re.MULTILINE))
+    return token_ok and users_ok
+
+
 def final_summary(install_path: Path, repo_dir: Path, hermes_base: Path, profile_home: Path, agent_name: str, agent_dir: Path | None, webui_ok: bool) -> None:
     print("\n========================================")
     print("Hermes full setup prepared")
@@ -348,11 +472,15 @@ def final_summary(install_path: Path, repo_dir: Path, hermes_base: Path, profile
         print(f"  {install_path / 'start-webui.sh'}")
     print(f"  then open http://localhost:{DEFAULT_PORT}")
     print("")
-    print("Telegram Gateway prepared, but token/user ID cannot be generated automatically.")
-    print("Next manual secret step:")
-    print(f"  edit {profile_home / '.env'}")
-    print("  fill TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USERS")
-    print("  then run:")
+    if telegram_ready(profile_home):
+        print("Telegram Gateway token/user allowlist saved.")
+        print("Start Telegram Gateway:")
+    else:
+        print("Telegram Gateway prepared. Token/user ID can be saved through the guided wizard:")
+        print(f"  python {repo_dir / 'install.py'} --skip-hermes-install --telegram")
+        print("Or edit manually:")
+        print(f"  {profile_home / '.env'}")
+        print("Start Telegram Gateway after token/user ID are set:")
     if is_windows():
         print(f"  powershell -ExecutionPolicy Bypass -File {install_path / 'start-gateway.ps1'}")
     else:
@@ -368,6 +496,8 @@ def main() -> None:
     parser.add_argument("--agent-name", help="Hermes profile/agent name. If omitted, prompt once.")
     parser.add_argument("--repo-url", default=REPO_URL_DEFAULT, help="Web UI git repository URL")
     parser.add_argument("--skip-hermes-install", action="store_true", help="Do not run the official Hermes Agent installer")
+    parser.add_argument("--telegram", action="store_true", help="Force guided Telegram BotFather token wizard")
+    parser.add_argument("--skip-telegram", action="store_true", help="Skip guided Telegram BotFather token wizard")
     parser.add_argument("--yes", action="store_true", help="Use defaults for any omitted prompt values")
     args = parser.parse_args()
 
@@ -401,6 +531,8 @@ def main() -> None:
     venv_python = make_venv(repo_dir, python_exe)
     write_launchers(install_path, repo_dir, profile_home)
     webui_ok = health_check(repo_dir, venv_python)
+    if not args.skip_telegram:
+        telegram_wizard(profile_home, agent_name, assume_yes=args.yes, force=args.telegram)
     final_summary(install_path, repo_dir, hermes_base, profile_home, agent_name, agent_dir, webui_ok)
 
 
