@@ -10,7 +10,7 @@
 # Override any step with environment variables:
 #   HERMES_WEBUI_AGENT_DIR   path to hermes-agent checkout
 #   HERMES_WEBUI_PYTHON      python executable to use
-#   HERMES_WEBUI_PORT        port to listen on (default: 8787)
+#   HERMES_WEBUI_PORT        port to listen on (default: 8788)
 #   HERMES_WEBUI_HOST        bind address (default: 127.0.0.1)
 #   HERMES_HOME              override ~/.hermes base
 #   HERMES_WEBUI_STATE_DIR   override state directory
@@ -41,7 +41,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 info "Repo root: ${REPO_ROOT}"
 
 # ── Port ─────────────────────────────────────────────────────────────────────
-PORT="${1:-${HERMES_WEBUI_PORT:-8787}}"
+PORT="${1:-${HERMES_WEBUI_PORT:-8788}}"
 export HERMES_WEBUI_PORT="${PORT}"
 
 # ── Python discovery ─────────────────────────────────────────────────────────

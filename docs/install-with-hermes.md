@@ -1,7 +1,7 @@
 # Install Hermes for Web with One Prompt
 
 Repository:
-https://github.com/reallygood83/hermes-for-web
+https://github.com/aihubos/ai-hub-os-hermes
 
 ## Goal
 Let an existing Hermes CLI agent or Hermes bot install this WebUI from a single prompt.
@@ -13,7 +13,7 @@ If the user has never installed Hermes Agent before, use the Full Hermes Install
 
 설치 프롬프트:
 
-reallygood83/hermes-for-web 저장소(https://github.com/reallygood83/hermes-for-web)를 내 환경에 설치해줘.
+aihubos/ai-hub-os-hermes 저장소(https://github.com/aihubos/ai-hub-os-hermes)를 내 환경에 설치해줘.
 다음을 자동으로 진행해줘.
 1. 저장소를 적절한 작업 디렉터리에 clone 또는 update
 2. 필요한 실행 파일/권한 확인
@@ -39,7 +39,7 @@ This prompt is optimized for Hermes-style agents because it asks for:
 ## Full install prompt for complete beginners
 
 Hermes Agent 를 아직 한 번도 설치해본 적이 없다.
-https://github.com/NousResearch/hermes-agent 와 https://github.com/reallygood83/hermes-for-web 를 기준으로 내 환경에 Hermes 전체를 처음부터 설치해줘.
+https://github.com/NousResearch/hermes-agent 와 https://github.com/aihubos/ai-hub-os-hermes 를 기준으로 내 환경에 Hermes 전체를 처음부터 설치해줘.
 다음을 자동으로 진행해줘.
 1. Hermes Agent 설치 또는 update
 2. 필요한 의존성/실행 환경 점검

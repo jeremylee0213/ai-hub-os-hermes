@@ -25,7 +25,7 @@ Expected scope:
 - verify runtime dependencies
 - prepare baseline Hermes CLI usage
 - optionally guide Telegram setup
-- install/update `https://github.com/reallygood83/hermes-for-web`
+- install/update `https://github.com/aihubos/ai-hub-os-hermes`
 - prepare localhost:8788 startup
 - summarize next steps
 

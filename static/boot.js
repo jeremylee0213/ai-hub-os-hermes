@@ -531,8 +531,8 @@ const SETUP_PACK_TEMPLATES={
   'obsidian-power':'Obsidian Power Workflow Pack 을 설치해줘. Obsidian note 작성, posting, ShareNote 생성, Telegram handoff 까지 이어지는 범용 워크플로우를 점검/설정하고 최종 사용법을 정리해줘.',
   'memory-sync':'Memory Sync Pack 을 점검해줘. WebUI, CLI, Telegram 간에 이어서 작업하기 좋은 memory/workflow 규칙을 확인하고, 필요한 공유 기억/핸드오프 사용법을 정리해줘.',
   'telegram-onboarding':'Hermes Telegram onboarding pack 을 실행해줘. 텔레그램에서 Hermes 봇을 아직 써보지 않은 사용자도 쉽게 시작할 수 있도록 필요한 설정, 계정 연결, 기본 사용 흐름, 점검 항목을 단계별로 정리하고 가능한 부분은 직접 세팅해줘. 마지막에는 초보자용 사용 가이드를 짧게 써줘.',
-  'hermes-full-install':'Hermes 를 처음 쓰는 사용자를 위한 Full Hermes Install pack 을 실행해줘. https://github.com/NousResearch/hermes-agent 와 https://github.com/reallygood83/hermes-for-web 를 기준으로, Hermes Agent 설치부터 필요한 의존성, 기본 설정, Telegram 연결 가능 여부 점검, WebUI 실행 준비까지 한 번에 진행해줘. 이미 설치된 항목은 재사용하고, 초보자도 이해할 수 있게 단계와 결과를 요약해줘.',
-  'webui-only-install':'이미 Hermes Agent 를 쓰는 사용자를 위한 WebUI-only Install pack 을 실행해줘. https://github.com/reallygood83/hermes-for-web 를 설치 또는 업데이트하고, localhost:8788 기준 실행 준비, Cherry Blossom 기본 테마, Assistant Name, Setup Packs, Artifact/Workspace 흐름까지 점검해줘.',
+  'hermes-full-install':'Hermes 를 처음 쓰는 사용자를 위한 Full Hermes Install pack 을 실행해줘. https://github.com/NousResearch/hermes-agent 와 https://github.com/aihubos/ai-hub-os-hermes 를 기준으로, Hermes Agent 설치부터 필요한 의존성, 기본 설정, Telegram 연결 가능 여부 점검, WebUI 실행 준비까지 한 번에 진행해줘. 이미 설치된 항목은 재사용하고, 초보자도 이해할 수 있게 단계와 결과를 요약해줘.',
+  'webui-only-install':'이미 Hermes Agent 를 쓰는 사용자를 위한 WebUI-only Install pack 을 실행해줘. https://github.com/aihubos/ai-hub-os-hermes 를 설치 또는 업데이트하고, localhost:8788 기준 실행 준비, Cherry Blossom 기본 테마, Assistant Name, Setup Packs, Artifact/Workspace 흐름까지 점검해줘.',
   'last30days':'last30days research pack 을 설치/점검해줘. 사용자가 최근 30일간 X/Reddit 기반 반응 조사를 쉽게 시작할 수 있도록 last30days 사용법, 소스 선택법(x/reddit/both), 대표 예시, 필수 전제 조건을 정리하고 가능한 환경 점검을 진행해줘.',
   'autoresearch':'AutoResearch pack 을 설치/점검해줘. 사용자가 조사 질문을 넣으면 리서치 흐름을 반복 실행하거나 심화 탐색할 수 있도록 기본 구조, 추천 워크플로우, 필요한 도구/전제 조건, 결과 정리 방식을 설명하고 가능한 환경 점검을 진행해줘.'
 };

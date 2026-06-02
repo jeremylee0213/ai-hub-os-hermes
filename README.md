@@ -8,6 +8,39 @@
 
 영문 안내: [README.en.md](README.en.md)
 
+## 전체 자동 설치
+
+이 저장소는 Hermes Agent + Hermes Web UI + Telegram Gateway 준비까지 한 번에 세팅하는 설치기를 포함합니다.
+
+설치기가 기본으로 물어보는 것은 두 가지뿐입니다.
+
+1. 설치 경로
+2. Agent 이름, 즉 Hermes profile 이름
+
+macOS / Linux / WSL:
+
+```bash
+git clone https://github.com/aihubos/ai-hub-os-hermes.git
+cd ai-hub-os-hermes
+./install.sh
+```
+
+Windows PowerShell:
+
+```powershell
+git clone https://github.com/aihubos/ai-hub-os-hermes.git
+cd ai-hub-os-hermes
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+설치 후 Web UI 기본 주소:
+
+```text
+http://localhost:8788
+```
+
+주의: Telegram 봇 토큰과 사용자 ID 같은 비밀값은 자동 생성할 수 없습니다. 설치기는 `.env`에 입력 위치를 만들어두고, 마지막에 어디를 채우면 되는지 알려줍니다.
+
 Hermes for Web 은 Hermes Agent 를 위한 브라우저 작업실입니다.
 
 쉽게 비유하면:
@@ -219,8 +252,8 @@ Preflight 는 비행기 이륙 전 체크리스트 같은 기능입니다.
 ### 로컬에서 바로 실행
 
 ```bash
-git clone https://github.com/reallygood83/hermes-for-web.git
-cd hermes-for-web
+git clone https://github.com/aihubos/ai-hub-os-hermes.git
+cd ai-hub-os-hermes
 ./start.sh 8788
 ```
 
@@ -350,7 +383,7 @@ README 상단 배지에도 같은 링크가 있습니다.
 ## Private repo 업로드 전 체크 포인트
 
 추천 저장소:
-- https://github.com/reallygood83/hermes-for-web
+- https://github.com/aihubos/ai-hub-os-hermes
 
 처음엔 private 으로 올리고,
 그 다음 깨끗한 머신에서 검증 후 공개 여부를 결정하는 게 좋습니다.
