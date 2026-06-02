@@ -2,9 +2,9 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if command -v python3 >/dev/null 2>&1; then
-  exec python3 "${SCRIPT_DIR}/start.py" "$@"
+  exec python3 "${SCRIPT_DIR}/install.py" "$@"
 elif command -v python >/dev/null 2>&1; then
-  exec python "${SCRIPT_DIR}/start.py" "$@"
+  exec python "${SCRIPT_DIR}/install.py" "$@"
 else
   echo "Python 3 is required. Please install Python 3.8+ and rerun." >&2
   exit 1

@@ -26,7 +26,7 @@ REPO_ROOT = Path(__file__).parent.parent.resolve()
 
 # ── Network config (env-overridable) ─────────────────────────────────────────
 HOST = os.getenv('HERMES_WEBUI_HOST', '127.0.0.1')
-PORT = int(os.getenv('HERMES_WEBUI_PORT', '8787'))
+PORT = int(os.getenv('HERMES_WEBUI_PORT', '8788'))
 
 # ── State directory (env-overridable, never inside repo) ──────────────────────
 STATE_DIR = Path(os.getenv(

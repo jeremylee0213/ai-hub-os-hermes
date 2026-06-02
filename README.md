@@ -216,12 +216,43 @@ Preflight 는 비행기 이륙 전 체크리스트 같은 기능입니다.
 ### 전제조건
 먼저 Hermes Agent 가 설치되어 있어야 합니다.
 
+### 자동 설치
+
+macOS/Linux/WSL2:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/aihubos/ai-hub-os-hermes/main/install.sh | bash
+```
+
+Windows PowerShell:
+
+```powershell
+iex (irm https://raw.githubusercontent.com/aihubos/ai-hub-os-hermes/main/install.ps1)
+```
+
+설치기는 기본적으로 두 가지만 묻습니다.
+
+```text
+Install path [~/HermesHub]:
+Agent name [default]:
+```
+
+그 다음 Hermes Agent, Web UI, 프로필 폴더, Telegram Gateway 설정 뼈대, Web UI 의존성까지 준비합니다.
+
 ### 로컬에서 바로 실행
 
 ```bash
-git clone https://github.com/reallygood83/hermes-for-web.git
-cd hermes-for-web
+git clone https://github.com/aihubos/ai-hub-os-hermes.git
+cd ai-hub-os-hermes
 ./start.sh 8788
+```
+
+Windows:
+
+```powershell
+git clone https://github.com/aihubos/ai-hub-os-hermes.git
+cd ai-hub-os-hermes
+.\start.ps1 8788
 ```
 
 그 다음 브라우저에서:
