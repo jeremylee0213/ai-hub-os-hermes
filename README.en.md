@@ -197,12 +197,43 @@ This reduces avoidable mistakes and makes the product feel more trustworthy.
 ### Prerequisite
 You need a working Hermes installation first.
 
+### Automated install
+
+macOS/Linux/WSL2:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/aihubos/ai-hub-os-hermes/main/install.sh | bash
+```
+
+Windows PowerShell:
+
+```powershell
+iex (irm https://raw.githubusercontent.com/aihubos/ai-hub-os-hermes/main/install.ps1)
+```
+
+The installer asks only two questions by default:
+
+```text
+Install path [~/HermesHub]:
+Agent name [default]:
+```
+
+Then it prepares Hermes Agent, this Web UI, profile directories, a Telegram Gateway scaffold, and Web UI dependencies.
+
 ### Start locally
 
 ```bash
-git clone https://github.com/reallygood83/hermes-for-web.git
-cd hermes-for-web
+git clone https://github.com/aihubos/ai-hub-os-hermes.git
+cd ai-hub-os-hermes
 ./start.sh 8788
+```
+
+Windows:
+
+```powershell
+git clone https://github.com/aihubos/ai-hub-os-hermes.git
+cd ai-hub-os-hermes
+.\start.ps1 8788
 ```
 
 Then open:
