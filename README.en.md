@@ -199,6 +199,8 @@ You need a working Hermes installation first.
 
 ### Automated install
 
+In Codex, paste the GitHub repo URL and ask it to install. If running manually, use one command:
+
 macOS/Linux/WSL2:
 
 ```bash
@@ -218,7 +220,18 @@ Install path [~/HermesHub]:
 Agent name [default]:
 ```
 
-Then it prepares Hermes Agent, this Web UI, profile directories, a Telegram Gateway scaffold, and Web UI dependencies.
+Then it automates as much as possible:
+
+- Recover missing Python via the official Hermes installer/Homebrew/winget path
+- Install Git when possible, otherwise use a GitHub ZIP fallback
+- Install/check Hermes Agent
+- Install/update this Web UI
+- Create profile folders and `.env` files
+- Skip Telegram Desktop if already installed, otherwise try to install it
+- Create Telegram Gateway token placeholders
+- Verify the Web UI `/health` endpoint
+
+BotFather tokens and model/API keys are still one-time manual secrets.
 
 ### Start locally
 

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Cross-platform installer for Hermes Web UI.
+"""Cross-platform one-shot installer for Hermes Web UI.
 
-Installs/updates Hermes Agent, clones or updates this Web UI, prepares a Hermes
-profile, writes local .env files, scaffolds Telegram Gateway config, installs
-Python dependencies, and optionally verifies the Web UI health endpoint.
+Designed for Codex-style usage: user pastes the GitHub URL and asks to install.
+The installer bootstraps Hermes Agent, gets this Web UI via git or ZIP fallback,
+prepares a Hermes profile, writes .env files, optionally installs Telegram
+Desktop, and verifies the Web UI health endpoint.
 """
 from __future__ import annotations
 
@@ -15,11 +16,14 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
+import zipfile
 from pathlib import Path
 
 DEFAULT_REPO_URL = "https://github.com/aihubos/ai-hub-os-hermes.git"
+DEFAULT_ZIP_URL = "https://github.com/aihubos/ai-hub-os-hermes/archive/refs/heads/main.zip"
 DEFAULT_PORT = 8788
 PROFILE_RE = re.compile(r"[^a-z0-9_-]+")
 
@@ -57,8 +61,31 @@ def is_windows() -> bool:
     return platform.system().lower() == "windows"
 
 
+def is_macos() -> bool:
+    return platform.system().lower() == "darwin"
+
+
 def is_wsl() -> bool:
     return platform.system().lower() == "linux" and "microsoft" in platform.release().lower()
+
+
+def refresh_path() -> None:
+    extras: list[str] = []
+    home = Path.home()
+    if is_windows():
+        local = Path(os.environ.get("LOCALAPPDATA", str(home / "AppData" / "Local")))
+        extras += [
+            str(local / "Microsoft" / "WindowsApps"),
+            str(local / "Programs" / "Python" / "Python312"),
+            str(local / "Programs" / "Python" / "Python311"),
+            str(local / "Programs" / "Git" / "cmd"),
+            str(Path("C:/Program Files/Git/cmd")),
+            str(Path("C:/Program Files/Git/bin")),
+        ]
+    else:
+        extras += [str(home / ".local" / "bin"), "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"]
+    old = os.environ.get("PATH", "")
+    os.environ["PATH"] = os.pathsep.join([p for p in extras if p]) + os.pathsep + old
 
 
 def default_install_path() -> Path:
@@ -97,6 +124,7 @@ def ensure_dir(path: Path, runner: StepRunner) -> None:
 
 
 def which_python() -> str:
+    refresh_path()
     if is_windows():
         for name in ("py", "python", "python3"):
             found = shutil.which(name)
@@ -106,12 +134,12 @@ def which_python() -> str:
         found = shutil.which(name)
         if found:
             return found
-    raise SystemExit("Python 3 not found. Install Python 3.8+ and rerun.")
+    raise SystemExit("Python 3 not found. Rerun install.sh/install.ps1 so the bootstrapper can install it.")
 
 
 def python_cmd() -> list[str]:
     exe = which_python()
-    if Path(exe).name.lower() == "py.exe" or Path(exe).name.lower() == "py":
+    if Path(exe).name.lower() in {"py.exe", "py"}:
         return [exe, "-3"]
     return [exe]
 
@@ -120,14 +148,49 @@ def venv_python(venv: Path) -> Path:
     return venv / ("Scripts/python.exe" if is_windows() else "bin/python")
 
 
-def git_cmd() -> str:
-    git = shutil.which("git")
-    if git:
-        return git
-    raise SystemExit("Git not found. Install Git, then rerun this installer.")
+def command_exists(name: str) -> bool:
+    refresh_path()
+    return shutil.which(name) is not None
+
+
+def install_homebrew_if_missing(runner: StepRunner) -> None:
+    if not is_macos() or command_exists("brew"):
+        return
+    runner.warn("Homebrew not found. Installing Homebrew to improve one-shot setup...")
+    runner.run(["/bin/bash", "-c", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"], check=False)
+    refresh_path()
+
+
+def install_git_if_possible(runner: StepRunner) -> None:
+    if command_exists("git"):
+        runner.ok(f"Git found: {shutil.which('git')}")
+        return
+    if is_macos():
+        install_homebrew_if_missing(runner)
+        if command_exists("brew"):
+            runner.run(["brew", "install", "git"], check=False)
+            refresh_path()
+        if command_exists("git"):
+            runner.ok(f"Git installed: {shutil.which('git')}")
+            return
+        runner.warn("Git not available; using GitHub ZIP fallback.")
+        return
+    if is_windows() and command_exists("winget"):
+        runner.run(["winget", "install", "--id", "Git.Git", "-e", "--accept-source-agreements", "--accept-package-agreements"], check=False)
+        refresh_path()
+        if command_exists("git"):
+            runner.ok(f"Git installed: {shutil.which('git')}")
+            return
+    runner.warn("Git not available; using GitHub ZIP fallback.")
+
+
+def git_cmd() -> str | None:
+    refresh_path()
+    return shutil.which("git")
 
 
 def install_or_update_hermes(runner: StepRunner, skip: bool = False) -> None:
+    refresh_path()
     hermes = shutil.which("hermes")
     if skip:
         runner.warn("Skipping Hermes Agent install/update (--skip-hermes-install).")
@@ -142,10 +205,16 @@ def install_or_update_hermes(runner: StepRunner, skip: bool = False) -> None:
         ps = shutil.which("powershell") or shutil.which("pwsh")
         if not ps:
             raise SystemExit("PowerShell not found; cannot run Windows Hermes installer.")
-        runner.run([ps, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "iex (irm https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.ps1)"])
+        runner.run([ps, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "iex (irm https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.ps1)"], check=False)
     else:
         sh = shutil.which("bash") or "/bin/bash"
-        runner.run([sh, "-c", "curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash"])
+        runner.run([sh, "-c", "curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash"], check=False)
+    refresh_path()
+    hermes = shutil.which("hermes")
+    if hermes:
+        runner.ok(f"Hermes CLI installed: {hermes}")
+    else:
+        runner.warn("Hermes CLI still not on PATH. Continuing; Web UI can still be prepared.")
 
 
 def discover_agent_dir(install_path: Path, hermes_base: Path) -> Path | None:
@@ -162,20 +231,46 @@ def discover_agent_dir(install_path: Path, hermes_base: Path) -> Path | None:
     return None
 
 
+def download_zip_webui(webui_dir: Path, runner: StepRunner, zip_url: str = DEFAULT_ZIP_URL) -> Path:
+    runner.info(f"Downloading Web UI ZIP fallback: {zip_url}")
+    if runner.dry_run:
+        return webui_dir.resolve()
+    parent = webui_dir.parent
+    parent.mkdir(parents=True, exist_ok=True)
+    if webui_dir.exists() and any(webui_dir.iterdir()):
+        backup = webui_dir.with_name(f"{webui_dir.name}.bak-{int(time.time())}")
+        runner.warn(f"Existing non-git Web UI dir backed up: {backup}")
+        shutil.move(str(webui_dir), str(backup))
+    with tempfile.TemporaryDirectory() as td:
+        zip_path = Path(td) / "webui.zip"
+        urllib.request.urlretrieve(zip_url, zip_path)
+        with zipfile.ZipFile(zip_path) as zf:
+            zf.extractall(td)
+        extracted = next(p for p in Path(td).iterdir() if p.is_dir())
+        shutil.move(str(extracted), str(webui_dir))
+    return webui_dir.resolve()
+
+
 def clone_or_update_webui(repo_url: str, install_path: Path, runner: StepRunner) -> Path:
     webui_dir = install_path / "hermes-for-web"
     current = Path(__file__).resolve().parent
-    if webui_dir.exists() and current == webui_dir.resolve():
-        runner.ok(f"Running inside target Web UI repo: {webui_dir}")
-        return webui_dir
+    if (current / "server.py").exists() and (current / "install.py").exists() and not str(current).startswith(tempfile.gettempdir()):
+        runner.ok(f"Running inside local Web UI repo: {current}")
+        return current.resolve()
 
     ensure_dir(install_path, runner)
+    install_git_if_possible(runner)
     git = git_cmd()
-    if (webui_dir / ".git").exists():
+    if git and (webui_dir / ".git").exists():
         runner.ok(f"Web UI repo exists: {webui_dir}")
-        runner.run([git, "-C", str(webui_dir), "pull", "--ff-only"])
+        runner.run([git, "-C", str(webui_dir), "pull", "--ff-only"], check=False)
+    elif git:
+        if webui_dir.exists() and any(webui_dir.iterdir()):
+            runner.warn(f"Target exists but is not a git repo; using it as-is: {webui_dir}")
+        else:
+            runner.run([git, "clone", repo_url, str(webui_dir)])
     else:
-        runner.run([git, "clone", repo_url, str(webui_dir)])
+        download_zip_webui(webui_dir, runner)
     return webui_dir.resolve()
 
 
@@ -222,7 +317,7 @@ def write_env(webui_dir: Path, agent_dir: Path | None, hermes_base: Path, active
         "# Generated by install.py. Edit as needed.",
         f"HERMES_BASE_HOME={hermes_base}",
         f"HERMES_HOME={active_home}",
-        f"HERMES_WEBUI_HOST=127.0.0.1",
+        "HERMES_WEBUI_HOST=127.0.0.1",
         f"HERMES_WEBUI_PORT={port}",
         f"HERMES_WEBUI_STATE_DIR={active_home / 'webui'}",
         f"HERMES_WEBUI_DEFAULT_WORKSPACE={active_home / 'workspace'}",
@@ -232,7 +327,19 @@ def write_env(webui_dir: Path, agent_dir: Path | None, hermes_base: Path, active
     write_if_missing(webui_dir / ".env", "\n".join(lines) + "\n", runner)
 
 
-def scaffold_telegram(active_home: Path, runner: StepRunner) -> None:
+def env_has_telegram_credentials(path: Path) -> bool:
+    if not path.exists():
+        return False
+    vals: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        if not line.strip() or line.lstrip().startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        vals[k.strip()] = v.strip()
+    return bool(vals.get("TELEGRAM_BOT_TOKEN")) and bool(vals.get("TELEGRAM_ALLOWED_USERS"))
+
+
+def scaffold_telegram(active_home: Path, runner: StepRunner) -> bool:
     text = """# Telegram Gateway scaffold
 # Create a bot with @BotFather, then fill these values.
 TELEGRAM_BOT_TOKEN=
@@ -241,7 +348,39 @@ TELEGRAM_ALLOWED_USERS=
 # TELEGRAM_HOME_CHANNEL=
 # TELEGRAM_PROXY=
 """
-    write_if_missing(active_home / ".env", text, runner, append=True)
+    env_path = active_home / ".env"
+    configured = env_has_telegram_credentials(env_path)
+    if configured:
+        runner.ok("Telegram credentials already present; keeping existing values.")
+        return True
+    write_if_missing(env_path, text, runner, append=True)
+    return False
+
+
+def install_telegram_desktop(runner: StepRunner, skip: bool = False) -> None:
+    if skip:
+        runner.warn("Skipping Telegram Desktop install/check (--skip-telegram-desktop).")
+        return
+    if is_macos():
+        if Path("/Applications/Telegram.app").exists() or Path.home().joinpath("Applications/Telegram.app").exists():
+            runner.ok("Telegram Desktop already installed; skipping.")
+            return
+        install_homebrew_if_missing(runner)
+        if command_exists("brew"):
+            runner.run(["brew", "install", "--cask", "telegram"], check=False)
+            return
+        runner.warn("Telegram Desktop not installed and Homebrew unavailable; skipping app install.")
+    elif is_windows():
+        if command_exists("winget"):
+            found = runner.run(["winget", "list", "--id", "Telegram.TelegramDesktop", "-e"], check=False)
+            if found.returncode == 0:
+                runner.ok("Telegram Desktop already installed; skipping.")
+                return
+            runner.run(["winget", "install", "--id", "Telegram.TelegramDesktop", "-e", "--accept-source-agreements", "--accept-package-agreements"], check=False)
+        else:
+            runner.warn("winget unavailable; skipping Telegram Desktop app install.")
+    else:
+        runner.info("Telegram Desktop app auto-install is only handled on macOS/Windows; skipping.")
 
 
 def install_webui_deps(webui_dir: Path, runner: StepRunner) -> Path:
@@ -302,6 +441,24 @@ def verify_webui(webui_dir: Path, py: Path, env: dict[str, str], port: int, runn
             proc.kill()
 
 
+def maybe_start_gateway(active_home: Path, runner: StepRunner, auto_start: bool) -> None:
+    if not auto_start:
+        return
+    if not env_has_telegram_credentials(active_home / ".env"):
+        runner.warn("Telegram token/user ID missing; gateway auto-start skipped.")
+        return
+    refresh_path()
+    hermes = shutil.which("hermes")
+    if not hermes:
+        runner.warn("Hermes CLI not found on PATH; gateway auto-start skipped.")
+        return
+    env = os.environ.copy()
+    env["HERMES_HOME"] = str(active_home)
+    runner.run([hermes, "gateway", "status"], env=env, check=False)
+    runner.run([hermes, "gateway", "install"], env=env, check=False)
+    runner.run([hermes, "gateway", "start"], env=env, check=False)
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Install Hermes Agent + Hermes Web UI + Telegram Gateway scaffold.")
     p.add_argument("--install-path", help="Install path. Default: ~/HermesHub or Windows LOCALAPPDATA\\HermesHub")
@@ -310,6 +467,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--port", type=int, default=DEFAULT_PORT, help=f"Web UI port. Default: {DEFAULT_PORT}")
     p.add_argument("--yes", action="store_true", help="Use defaults for missing answers.")
     p.add_argument("--skip-hermes-install", action="store_true", help="Do not run official Hermes installer if hermes is missing.")
+    p.add_argument("--skip-telegram-desktop", action="store_true", help="Do not check/install Telegram Desktop app.")
+    p.add_argument("--auto-start-gateway", action="store_true", help="If Telegram env values exist, install/start Hermes gateway service.")
     p.add_argument("--no-verify", action="store_true", help="Skip temporary Web UI health check.")
     p.add_argument("--dry-run", action="store_true", help="Print actions without changing files.")
     return p.parse_args()
@@ -318,6 +477,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     runner = StepRunner(args.dry_run)
+    refresh_path()
     runner.info(f"Detected platform: {platform.system()}" + (" (WSL)" if is_wsl() else ""))
 
     default_path = str(default_install_path())
@@ -339,7 +499,8 @@ def main() -> int:
         runner.warn("Hermes agent checkout not found yet; Web UI .env will omit HERMES_WEBUI_AGENT_DIR.")
 
     write_env(webui_dir, agent_dir, hermes_base, active_home, args.port, runner)
-    scaffold_telegram(active_home, runner)
+    telegram_ready = scaffold_telegram(active_home, runner)
+    install_telegram_desktop(runner, skip=args.skip_telegram_desktop)
     py = install_webui_deps(webui_dir, runner)
 
     env = os.environ.copy()
@@ -356,15 +517,19 @@ def main() -> int:
 
     if not args.no_verify:
         verify_webui(webui_dir, py, env, args.port, runner)
+    maybe_start_gateway(active_home, runner, args.auto_start_gateway)
 
     print("\nDone.")
     print(f"Web UI repo : {webui_dir}")
     print(f"Hermes home : {active_home}")
     print(f"Start Web UI: {webui_dir / ('start.ps1' if is_windows() else 'start.sh')} {args.port}")
     print(f"Open       : http://127.0.0.1:{args.port}")
-    print("Telegram  : fill TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USERS in")
-    print(f"            {active_home / '.env'}")
-    print("            then run: hermes gateway setup && hermes gateway")
+    if telegram_ready:
+        print("Telegram  : token/user ID already found. Use --auto-start-gateway to start gateway automatically.")
+    else:
+        print("Telegram  : BotFather token and Telegram user ID are still manual one-time secrets.")
+        print(f"            Fill them in: {active_home / '.env'}")
+        print("            then run: hermes gateway setup && hermes gateway")
     return 0
 
 

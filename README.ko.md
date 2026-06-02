@@ -216,6 +216,9 @@ Preflight 는 비행기 이륙 전 체크리스트 같은 기능입니다.
 
 ### 자동 설치
 
+Codex에는 저장소 주소를 붙여넣고 “설치해줘”라고 요청하면 됩니다.
+직접 실행할 때는 아래 한 줄을 사용합니다.
+
 macOS/Linux/WSL2:
 
 ```bash
@@ -235,7 +238,18 @@ Install path [~/HermesHub]:
 Agent name [default]:
 ```
 
-그 다음 Hermes Agent, Web UI, 프로필 폴더, Telegram Gateway 설정 뼈대, Web UI 의존성까지 준비합니다.
+그 다음 가능한 범위에서 자동 처리합니다.
+
+- Python 이 없으면 공식 Hermes 설치기/Homebrew/winget 경로로 복구 시도
+- Git 이 없으면 설치를 시도하고, 안 되면 GitHub ZIP 으로 받기
+- Hermes Agent 설치/확인
+- Web UI 설치/업데이트
+- 프로필 폴더와 `.env` 생성
+- Telegram Desktop 이 있으면 패스, 없으면 설치 시도
+- Telegram Gateway 토큰 입력칸 생성
+- Web UI `/health` 점검
+
+단, BotFather 토큰과 API Key 같은 비밀값은 사용자가 직접 넣어야 합니다.
 
 ### 로컬에서 바로 실행
 
