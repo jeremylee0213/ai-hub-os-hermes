@@ -25,6 +25,7 @@ from pathlib import Path
 DEFAULT_REPO_URL = "https://github.com/aihubos/ai-hub-os-hermes.git"
 DEFAULT_ZIP_URL = "https://github.com/aihubos/ai-hub-os-hermes/archive/refs/heads/main.zip"
 DEFAULT_PORT = 8788
+MIN_PYTHON = (3, 8)
 PROFILE_RE = re.compile(r"[^a-z0-9_-]+")
 
 
@@ -113,8 +114,23 @@ def sanitize_agent_name(name: str) -> str:
 
 
 def ask(prompt: str, default: str) -> str:
-    value = input(f"{prompt} [{default}]: ").strip()
-    return value or default
+    text = f"{prompt} [{default}]: "
+    if sys.stdin.isatty():
+        try:
+            value = input(text).strip()
+            return value or default
+        except EOFError:
+            return default
+    if not is_windows():
+        try:
+            with open("/dev/tty", "r", encoding="utf-8", errors="ignore") as tty:
+                print(text, end="", flush=True)
+                value = tty.readline().strip()
+                return value or default
+        except OSError:
+            pass
+    print(f"[--] {prompt}: using default {default} (non-interactive)")
+    return default
 
 
 def ensure_dir(path: Path, runner: StepRunner) -> None:
@@ -123,16 +139,31 @@ def ensure_dir(path: Path, runner: StepRunner) -> None:
         path.mkdir(parents=True, exist_ok=True)
 
 
+def python_command_is_usable(cmd: list[str]) -> bool:
+    code = f"import sys; raise SystemExit(0 if sys.version_info >= ({MIN_PYTHON[0]}, {MIN_PYTHON[1]}) else 1)"
+    try:
+        result = subprocess.run(
+            cmd + ["-c", code],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=False,
+        )
+        return result.returncode == 0
+    except OSError:
+        return False
+
+
 def which_python() -> str:
     refresh_path()
     if is_windows():
         for name in ("py", "python", "python3"):
             found = shutil.which(name)
-            if found:
+            if found and python_command_is_usable([found] + (["-3"] if Path(found).name.lower() in {"py.exe", "py"} else [])):
                 return found
     for name in ("python3", "python"):
         found = shutil.which(name)
-        if found:
+        if found and python_command_is_usable([found]):
             return found
     raise SystemExit("Python 3 not found. Rerun install.sh/install.ps1 so the bootstrapper can install it.")
 
@@ -153,6 +184,20 @@ def command_exists(name: str) -> bool:
     return shutil.which(name) is not None
 
 
+def usable_git_cmd() -> str | None:
+    refresh_path()
+    git = shutil.which("git")
+    if not git:
+        return None
+    try:
+        result = subprocess.run([git, "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True, check=False)
+        if result.returncode == 0:
+            return git
+    except OSError:
+        return None
+    return None
+
+
 def install_homebrew_if_missing(runner: StepRunner) -> None:
     if not is_macos() or command_exists("brew"):
         return
@@ -162,31 +207,33 @@ def install_homebrew_if_missing(runner: StepRunner) -> None:
 
 
 def install_git_if_possible(runner: StepRunner) -> None:
-    if command_exists("git"):
-        runner.ok(f"Git found: {shutil.which('git')}")
+    git = usable_git_cmd()
+    if git:
+        runner.ok(f"Git found: {git}")
         return
     if is_macos():
         install_homebrew_if_missing(runner)
         if command_exists("brew"):
             runner.run(["brew", "install", "git"], check=False)
             refresh_path()
-        if command_exists("git"):
-            runner.ok(f"Git installed: {shutil.which('git')}")
+        git = usable_git_cmd()
+        if git:
+            runner.ok(f"Git installed: {git}")
             return
         runner.warn("Git not available; using GitHub ZIP fallback.")
         return
     if is_windows() and command_exists("winget"):
         runner.run(["winget", "install", "--id", "Git.Git", "-e", "--accept-source-agreements", "--accept-package-agreements"], check=False)
         refresh_path()
-        if command_exists("git"):
-            runner.ok(f"Git installed: {shutil.which('git')}")
+        git = usable_git_cmd()
+        if git:
+            runner.ok(f"Git installed: {git}")
             return
     runner.warn("Git not available; using GitHub ZIP fallback.")
 
 
 def git_cmd() -> str | None:
-    refresh_path()
-    return shutil.which("git")
+    return usable_git_cmd()
 
 
 def install_or_update_hermes(runner: StepRunner, skip: bool = False) -> None:
@@ -243,7 +290,15 @@ def download_zip_webui(webui_dir: Path, runner: StepRunner, zip_url: str = DEFAU
         shutil.move(str(webui_dir), str(backup))
     with tempfile.TemporaryDirectory() as td:
         zip_path = Path(td) / "webui.zip"
-        urllib.request.urlretrieve(zip_url, zip_path)
+        curl = shutil.which("curl")
+        if curl:
+            try:
+                runner.run([curl, "-fsSL", zip_url, "-o", str(zip_path)])
+            except subprocess.CalledProcessError:
+                runner.warn("curl ZIP download failed; retrying with Python urllib.")
+                urllib.request.urlretrieve(zip_url, zip_path)
+        else:
+            urllib.request.urlretrieve(zip_url, zip_path)
         with zipfile.ZipFile(zip_path) as zf:
             zf.extractall(td)
         extracted = next(p for p in Path(td).iterdir() if p.is_dir())
@@ -263,12 +318,19 @@ def clone_or_update_webui(repo_url: str, install_path: Path, runner: StepRunner)
     git = git_cmd()
     if git and (webui_dir / ".git").exists():
         runner.ok(f"Web UI repo exists: {webui_dir}")
-        runner.run([git, "-C", str(webui_dir), "pull", "--ff-only"], check=False)
+        result = runner.run([git, "-C", str(webui_dir), "pull", "--ff-only"], check=False)
+        if result.returncode != 0:
+            runner.warn("Git pull failed; using GitHub ZIP fallback.")
+            download_zip_webui(webui_dir, runner)
     elif git:
         if webui_dir.exists() and any(webui_dir.iterdir()):
             runner.warn(f"Target exists but is not a git repo; using it as-is: {webui_dir}")
         else:
-            runner.run([git, "clone", repo_url, str(webui_dir)])
+            try:
+                runner.run([git, "clone", repo_url, str(webui_dir)])
+            except subprocess.CalledProcessError:
+                runner.warn("Git clone failed; using GitHub ZIP fallback.")
+                download_zip_webui(webui_dir, runner)
     else:
         download_zip_webui(webui_dir, runner)
     return webui_dir.resolve()

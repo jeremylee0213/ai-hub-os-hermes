@@ -213,7 +213,8 @@ Windows PowerShell:
 iex (irm https://raw.githubusercontent.com/aihubos/ai-hub-os-hermes/main/install.ps1)
 ```
 
-The installer asks only two questions by default:
+When terminal input is available, the installer asks only two questions by default.
+In non-interactive automation it continues with defaults.
 
 ```text
 Install path [~/HermesHub]:
@@ -227,7 +228,7 @@ Then it automates as much as possible:
 - Install/check Hermes Agent
 - Install/update this Web UI
 - Create profile folders and `.env` files
-- Skip Telegram Desktop if already installed, otherwise try to install it
+- On macOS/Windows, skip Telegram Desktop if already installed, otherwise try to install it
 - Create Telegram Gateway token placeholders
 - Verify the Web UI `/health` endpoint
 

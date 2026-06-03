@@ -231,7 +231,8 @@ Windows PowerShell:
 iex (irm https://raw.githubusercontent.com/aihubos/ai-hub-os-hermes/main/install.ps1)
 ```
 
-설치기는 기본적으로 두 가지만 묻습니다.
+설치기는 터미널 입력이 가능하면 기본적으로 두 가지만 묻습니다.
+입력을 받을 수 없는 자동 실행 환경에서는 기본값으로 진행합니다.
 
 ```text
 Install path [~/HermesHub]:
@@ -245,7 +246,7 @@ Agent name [default]:
 - Hermes Agent 설치/확인
 - Web UI 설치/업데이트
 - 프로필 폴더와 `.env` 생성
-- Telegram Desktop 이 있으면 패스, 없으면 설치 시도
+- macOS/Windows 에서 Telegram Desktop 이 있으면 패스, 없으면 설치 시도
 - Telegram Gateway 토큰 입력칸 생성
 - Web UI `/health` 점검
 
