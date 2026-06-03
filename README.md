@@ -237,7 +237,8 @@ iex (irm https://raw.githubusercontent.com/aihubos/ai-hub-os-hermes/main/install
 입력을 받을 수 없는 자동 실행 환경에서는 기본값으로 진행합니다.
 
 ```text
-Install path [~/HermesHub]:
+Windows:     Install path [C:\AI Hub OS\Hermes]:
+macOS/Linux: Install path [~/AI Hub OS/Hermes]:
 Agent name [default]:
 ```
 
@@ -247,7 +248,10 @@ Agent name [default]:
 - Git 이 없으면 설치를 시도하고, 안 되면 GitHub ZIP 으로 받기
 - Hermes Agent 설치/확인
 - Web UI 설치/업데이트
+- 기본 폴더 생성: `C:\AI Hub OS\Hermes`, `C:\AI Hub OS\Obsidian`, `C:\AI Hub OS\LLM Wiki`
 - 프로필 폴더와 `.env` 생성
+- macOS/Windows 에서 Obsidian 이 있으면 패스, 없으면 설치 시도
+- LLM Wiki 가이드와 기본 vault 구조 생성
 - macOS/Windows 에서 Telegram Desktop 이 있으면 패스, 없으면 설치 시도
 - Telegram Gateway 토큰 입력칸 생성
 - Web UI `/health` 점검

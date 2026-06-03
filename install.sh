@@ -35,8 +35,13 @@ Common options:
   --dry-run
   --skip-hermes-install
   --skip-telegram-desktop
+  --skip-obsidian
+  --skip-llm-wiki
+  --ai-hub-root PATH
   --no-verify
   --install-path PATH
+  --obsidian-path PATH
+  --llm-wiki-path PATH
   --agent-name NAME
 EOF
 }

@@ -217,7 +217,8 @@ When terminal input is available, the installer asks only two questions by defau
 In non-interactive automation it continues with defaults.
 
 ```text
-Install path [~/HermesHub]:
+Windows:     Install path [C:\AI Hub OS\Hermes]:
+macOS/Linux: Install path [~/AI Hub OS/Hermes]:
 Agent name [default]:
 ```
 
@@ -227,7 +228,10 @@ Then it automates as much as possible:
 - Install Git when possible, otherwise use a GitHub ZIP fallback
 - Install/check Hermes Agent
 - Install/update this Web UI
+- Create default folders: `C:\AI Hub OS\Hermes`, `C:\AI Hub OS\Obsidian`, `C:\AI Hub OS\LLM Wiki`
 - Create profile folders and `.env` files
+- On macOS/Windows, skip Obsidian if already installed, otherwise try to install it
+- Download the LLM Wiki guide and create a starter vault structure
 - On macOS/Windows, skip Telegram Desktop if already installed, otherwise try to install it
 - Create Telegram Gateway token placeholders
 - Verify the Web UI `/health` endpoint

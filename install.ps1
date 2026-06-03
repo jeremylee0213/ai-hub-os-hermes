@@ -24,8 +24,13 @@ function Show-BootstrapHelp {
   Write-Host "  --dry-run"
   Write-Host "  --skip-hermes-install"
   Write-Host "  --skip-telegram-desktop"
+  Write-Host "  --skip-obsidian"
+  Write-Host "  --skip-llm-wiki"
+  Write-Host "  --ai-hub-root PATH"
   Write-Host "  --no-verify"
   Write-Host "  --install-path PATH"
+  Write-Host "  --obsidian-path PATH"
+  Write-Host "  --llm-wiki-path PATH"
   Write-Host "  --agent-name NAME"
 }
 
