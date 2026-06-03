@@ -231,7 +231,7 @@ Then it automates as much as possible:
 - Create default folders: `C:\AI Hub OS\Hermes`, `C:\AI Hub OS\Obsidian`, `C:\AI Hub OS\LLM Wiki`
 - Create profile folders and `.env` files
 - On macOS/Windows, skip Obsidian if already installed, otherwise try to install it
-- Download the LLM Wiki guide and create a starter vault structure
+- Create the starter vault structure inside `Obsidian`, then save the LLM Wiki guide in `LLM Wiki`
 - On macOS/Windows, skip Telegram Desktop if already installed, otherwise try to install it
 - Create Telegram Gateway token placeholders
 - Verify the Web UI `/health` endpoint

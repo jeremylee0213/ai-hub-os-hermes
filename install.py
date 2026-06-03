@@ -454,11 +454,7 @@ def append_env_value(path: Path, key: str, value: Path, runner: StepRunner) -> N
     path.write_text(existing + suffix + line + "\n", encoding="utf-8")
 
 
-def scaffold_llm_wiki(wiki_dir: Path, runner: StepRunner, gist_url: str = DEFAULT_LLM_WIKI_GIST_URL, skip: bool = False) -> Path:
-    if skip:
-        runner.warn("Skipping LLM Wiki scaffold (--skip-llm-wiki).")
-        return wiki_dir.resolve()
-
+def scaffold_obsidian_workspace(obsidian_dir: Path, runner: StepRunner) -> Path:
     for sub in (
         "",
         ".obsidian",
@@ -470,23 +466,17 @@ def scaffold_llm_wiki(wiki_dir: Path, runner: StepRunner, gist_url: str = DEFAUL
         "wiki/outputs",
         "schema",
     ):
-        ensure_dir(wiki_dir / sub if sub else wiki_dir, runner)
-
-    readme = wiki_dir / "README.md"
-    if not readme.exists() or runner.dry_run:
-        download_file(gist_url, readme, runner)
-    else:
-        runner.ok(f"LLM Wiki guide already present: {readme}")
+        ensure_dir(obsidian_dir / sub if sub else obsidian_dir, runner)
 
     write_file_if_absent(
-        wiki_dir / "index.md",
-        """# LLM Wiki Index
+        obsidian_dir / "index.md",
+        """# Obsidian Workspace Index
 
 This index is maintained by the LLM agent.
 
 ## Core folders
 
-- [[README]] - LLM Wiki pattern and operating idea
+- LLM Wiki guide lives in the sibling `../LLM Wiki/README.md` folder
 - `raw/sources/` - source documents the LLM reads but does not edit
 - `raw/assets/` - local images and attachments
 - `wiki/` - generated and maintained wiki pages
@@ -495,8 +485,8 @@ This index is maintained by the LLM agent.
         runner,
     )
     write_file_if_absent(
-        wiki_dir / "log.md",
-        """# LLM Wiki Log
+        obsidian_dir / "log.md",
+        """# Obsidian Workspace Log
 
 Append entries with this shape:
 
@@ -509,10 +499,10 @@ Append entries with this shape:
         runner,
     )
     write_file_if_absent(
-        wiki_dir / "AGENTS.md",
-        """# LLM Wiki Agent Rules
+        obsidian_dir / "AGENTS.md",
+        """# Obsidian Workspace Agent Rules
 
-You maintain this Obsidian-compatible LLM Wiki.
+You maintain this Obsidian-compatible workspace.
 
 ## Folders
 
@@ -533,6 +523,20 @@ You maintain this Obsidian-compatible LLM Wiki.
 """,
         runner,
     )
+    return obsidian_dir.resolve()
+
+
+def scaffold_llm_wiki(wiki_dir: Path, runner: StepRunner, gist_url: str = DEFAULT_LLM_WIKI_GIST_URL, skip: bool = False) -> Path:
+    if skip:
+        runner.warn("Skipping LLM Wiki guide folder (--skip-llm-wiki).")
+        return wiki_dir.resolve()
+
+    ensure_dir(wiki_dir, runner)
+    readme = wiki_dir / "README.md"
+    if not readme.exists() or runner.dry_run:
+        download_file(gist_url, readme, runner)
+    else:
+        runner.ok(f"LLM Wiki guide already present: {readme}")
     return wiki_dir.resolve()
 
 
@@ -708,7 +712,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--skip-hermes-install", action="store_true", help="Do not run official Hermes installer if hermes is missing.")
     p.add_argument("--skip-telegram-desktop", action="store_true", help="Do not check/install Telegram Desktop app.")
     p.add_argument("--skip-obsidian", action="store_true", help="Do not check/install Obsidian app.")
-    p.add_argument("--skip-llm-wiki", action="store_true", help="Do not create the LLM Wiki scaffold.")
+    p.add_argument("--skip-llm-wiki", action="store_true", help="Do not create/download the LLM Wiki guide folder.")
     p.add_argument("--auto-start-gateway", action="store_true", help="If Telegram env values exist, install/start Hermes gateway service.")
     p.add_argument("--no-verify", action="store_true", help="Skip temporary Web UI health check.")
     p.add_argument("--dry-run", action="store_true", help="Print actions without changing files.")
@@ -748,10 +752,10 @@ def main() -> int:
     append_env_value(webui_dir / ".env", "HERMES_WEBUI_OBSIDIAN_DIR", obsidian_path, runner)
     append_env_value(webui_dir / ".env", "HERMES_WEBUI_LLM_WIKI_DIR", llm_wiki_path, runner)
     append_env_value(active_home / ".env", "OBSIDIAN_HOME", obsidian_path, runner)
-    append_env_value(active_home / ".env", "OBSIDIAN_VAULT_PATH", llm_wiki_path, runner)
+    append_env_value(active_home / ".env", "OBSIDIAN_VAULT_PATH", obsidian_path, runner)
     append_env_value(active_home / ".env", "LLM_WIKI_PATH", llm_wiki_path, runner)
     telegram_ready = scaffold_telegram(active_home, runner)
-    ensure_dir(obsidian_path, runner)
+    scaffold_obsidian_workspace(obsidian_path, runner)
     install_obsidian(runner, skip=args.skip_obsidian)
     scaffold_llm_wiki(llm_wiki_path, runner, gist_url=args.llm_wiki_gist_url, skip=args.skip_llm_wiki)
     install_telegram_desktop(runner, skip=args.skip_telegram_desktop)
