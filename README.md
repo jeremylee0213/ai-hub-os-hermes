@@ -214,7 +214,16 @@ Preflight 는 비행기 이륙 전 체크리스트 같은 기능입니다.
 ## 빠른 시작
 
 ### 전제조건
-먼저 Hermes Agent 가 설치되어 있어야 합니다.
+
+- 인터넷 연결
+- macOS 터미널 또는 Windows PowerShell
+- Codex를 사용할 수 있는 GPT/ChatGPT 계정으로 로그인
+- GPT 웹 설정에서 Codex 기능 켜기
+- GPT 웹 설정에서 Codex Computer Use 옵션 켜기
+- 설치 중 표시되는 GPT OAuth 브라우저 로그인 승인
+- Telegram을 쓸 경우 BotFather 봇과 내 Telegram ID 준비
+
+Hermes Agent, Python, Git, Obsidian, Telegram Desktop 은 설치기가 가능한 범위에서 자동 확인/설치합니다.
 
 ### 자동 설치
 
@@ -233,13 +242,18 @@ Windows PowerShell:
 iex (irm https://raw.githubusercontent.com/aihubos/ai-hub-os-hermes/main/install.ps1)
 ```
 
-설치기는 터미널 입력이 가능하면 기본적으로 두 가지만 묻습니다.
+설치기는 터미널 입력이 가능하면 먼저 사전 준비 체크리스트를 확인합니다.
 입력을 받을 수 없는 자동 실행 환경에서는 기본값으로 진행합니다.
 
 ```text
+위 항목을 모두 완료했나요? 계속하려면 yes 입력 [no]:
 Windows:     Install path [C:\AI Hub OS\Hermes]:
 macOS/Linux: Install path [~/AI Hub OS/Hermes]:
-Agent name [default]:
+Bot name [Hermes]:
+Telegram Gateway를 설정할까요? BotFather 봇이 있으면 yes [no]:
+Telegram user ID / allowed chat ID []:
+BotFather token [Enter to skip]:
+설치 후 Telegram Gateway를 바로 시작할까요? [no]:
 ```
 
 그 다음 가능한 범위에서 자동 처리합니다.
@@ -250,13 +264,15 @@ Agent name [default]:
 - Web UI 설치/업데이트
 - 기본 폴더 생성: `C:\AI Hub OS\Hermes`, `C:\AI Hub OS\Obsidian`, `C:\AI Hub OS\LLM Wiki`
 - 프로필 폴더와 `.env` 생성
+- GPT OAuth 연결 시도: `openai-codex`
+- Hermes/Web UI/Telegram 기본 모델: `gpt-5.4-mini`, 추론 모드: `off`
 - macOS/Windows 에서 Obsidian 이 있으면 패스, 없으면 설치 시도
 - Obsidian 폴더에 기본 vault 구조 생성, LLM Wiki 폴더에 가이드 저장
 - macOS/Windows 에서 Telegram Desktop 이 있으면 패스, 없으면 설치 시도
-- Telegram Gateway 토큰 입력칸 생성
+- 사용자가 입력한 Telegram ID/토큰을 `.env`에 반영하고, 비워두면 입력칸만 생성
 - Web UI `/health` 점검
 
-단, BotFather 토큰과 API Key 같은 비밀값은 사용자가 직접 넣어야 합니다.
+단, BotFather 토큰과 API Key 같은 비밀값은 사용자가 직접 넣어야 합니다. GPT OAuth도 브라우저 로그인 승인은 사용자가 직접 완료해야 합니다.
 
 ### 로컬에서 바로 실행
 

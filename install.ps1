@@ -2,6 +2,8 @@ $ErrorActionPreference = "Stop"
 $RawBase = if ($env:HERMES_WEBUI_RAW_BASE) { $env:HERMES_WEBUI_RAW_BASE } else { "https://raw.githubusercontent.com/aihubos/ai-hub-os-hermes/main" }
 $BootstrapDryRun = $args -contains "--dry-run"
 $BootstrapHelp = ($args -contains "--help") -or ($args -contains "-h")
+$BootstrapYes = $args -contains "--yes"
+$BootstrapSkipPreflight = $args -contains "--skip-preflight"
 $BootstrapSkipHermes = $args -contains "--skip-hermes-install"
 $Installer = $null
 
@@ -22,7 +24,9 @@ function Show-BootstrapHelp {
   Write-Host "Common options:"
   Write-Host "  --yes"
   Write-Host "  --dry-run"
+  Write-Host "  --skip-preflight"
   Write-Host "  --skip-hermes-install"
+  Write-Host "  --skip-gpt-oauth"
   Write-Host "  --skip-telegram-desktop"
   Write-Host "  --skip-obsidian"
   Write-Host "  --skip-llm-wiki"
@@ -32,7 +36,43 @@ function Show-BootstrapHelp {
   Write-Host "  --obsidian-path PATH"
   Write-Host "  --llm-wiki-path PATH"
   Write-Host "  --agent-name NAME"
+  Write-Host "  --bot-name NAME"
+  Write-Host "  --bot-id ID"
 }
+
+function Confirm-Preflight {
+  if ($env:HERMES_WEBUI_PREFLIGHT_DONE -eq "1") { return }
+  if ($BootstrapHelp) { return }
+
+  Write-Host ""
+  Write-Host "Preflight checklist"
+  Write-Host " - 인터넷 연결이 되어 있음"
+  Write-Host " - macOS 터미널 또는 Windows PowerShell을 열 수 있음"
+  Write-Host " - Codex를 사용할 수 있는 GPT/ChatGPT 계정으로 로그인되어 있음"
+  Write-Host " - GPT/ChatGPT 웹 설정에서 Codex 기능을 켰음"
+  Write-Host " - Codex Computer Use 옵션을 켰음"
+  Write-Host " - 설치 중 관리자 권한/브라우저 로그인 요청을 승인할 수 있음"
+  Write-Host " - Telegram을 쓸 경우 BotFather 봇과 내 Telegram ID를 준비했음"
+  Write-Host ""
+
+  if ($BootstrapSkipPreflight -or $BootstrapYes -or $BootstrapDryRun) {
+    $env:HERMES_WEBUI_PREFLIGHT_DONE = "1"
+    return
+  }
+  if ([Console]::IsInputRedirected) {
+    Write-Host "[!!] No interactive terminal found; continuing without preflight confirmation."
+    $env:HERMES_WEBUI_PREFLIGHT_DONE = "1"
+    return
+  }
+
+  $answer = (Read-Host "위 항목을 모두 완료했나요? 계속하려면 yes 입력 [no]").ToLowerInvariant()
+  if (@("y", "yes", "ok", "done", "ready", "네", "예", "응", "완료", "준비됨") -notcontains $answer) {
+    throw "사전 준비가 끝난 뒤 같은 설치 명령을 다시 실행해 주세요."
+  }
+  $env:HERMES_WEBUI_PREFLIGHT_DONE = "1"
+}
+
+Confirm-Preflight
 
 function Test-PythonCommand {
   param([string[]]$Command)

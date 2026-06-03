@@ -9,6 +9,8 @@ Desktop, and verifies the Web UI health endpoint.
 from __future__ import annotations
 
 import argparse
+import getpass
+import json
 import os
 import platform
 import re
@@ -26,6 +28,10 @@ DEFAULT_REPO_URL = "https://github.com/aihubos/ai-hub-os-hermes.git"
 DEFAULT_ZIP_URL = "https://github.com/aihubos/ai-hub-os-hermes/archive/refs/heads/main.zip"
 DEFAULT_LLM_WIKI_GIST_URL = "https://gist.githubusercontent.com/aihubos/a3b8d89c5821c8ddc982b006d34b1ac5/raw/llm-wiki.md"
 DEFAULT_PORT = 8788
+DEFAULT_HERMES_MODEL = "gpt-5.4-mini"
+DEFAULT_WEBUI_MODEL = "openai-codex/gpt-5.4-mini"
+DEFAULT_HERMES_PROVIDER = "openai-codex"
+DEFAULT_REASONING_EFFORT = "none"
 MIN_PYTHON = (3, 8)
 PROFILE_RE = re.compile(r"[^a-z0-9_-]+")
 
@@ -51,6 +57,19 @@ class StepRunner:
         if self.dry_run:
             return subprocess.CompletedProcess(cmd, 0, "", "")
         return subprocess.run(cmd, cwd=str(cwd) if cwd else None, env=env, text=True, check=check)
+
+    def run_interactive(self, cmd: list[str], *, env: dict[str, str] | None = None, check: bool = True) -> subprocess.CompletedProcess:
+        pretty = " ".join(quote(c) for c in cmd)
+        self.info(pretty)
+        if self.dry_run:
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        if is_windows() or sys.stdin.isatty():
+            return subprocess.run(cmd, env=env, text=True, check=check)
+        try:
+            with open("/dev/tty", "r", encoding="utf-8", errors="ignore") as tty:
+                return subprocess.run(cmd, env=env, text=True, stdin=tty, check=check)
+        except OSError:
+            return subprocess.run(cmd, env=env, text=True, check=check)
 
 
 def quote(s: str) -> str:
@@ -157,6 +176,76 @@ def ask(prompt: str, default: str) -> str:
             pass
     print(f"[--] {prompt}: using default {default} (non-interactive)")
     return default
+
+
+def ask_yes_no(prompt: str, default: bool) -> bool:
+    label = "yes" if default else "no"
+    value = ask(prompt, label).strip().lower()
+    if value in {"y", "yes", "ok", "true", "1", "네", "예", "응", "완료"}:
+        return True
+    if value in {"n", "no", "false", "0", "아니오", "아니", "안함"}:
+        return False
+    return default
+
+
+def ask_secret(prompt: str) -> str:
+    if not can_prompt_user():
+        print(f"[--] {prompt}: left empty (non-interactive)")
+        return ""
+    label = f"{prompt} [Enter to skip]: "
+    try:
+        if sys.stdin.isatty():
+            return getpass.getpass(label).strip()
+        if not is_windows():
+            with open("/dev/tty", "r+", encoding="utf-8", errors="ignore") as tty:
+                return getpass.getpass(label, stream=tty).strip()
+    except (EOFError, OSError):
+        pass
+    return ""
+
+
+def can_prompt_user() -> bool:
+    if sys.stdin.isatty():
+        return True
+    return (not is_windows()) and Path("/dev/tty").exists()
+
+
+def confirm_preflight(runner: StepRunner, *, assume_yes: bool = False, skip: bool = False, dry_run: bool = False) -> None:
+    if os.environ.get("HERMES_WEBUI_PREFLIGHT_DONE") == "1":
+        runner.ok("Preflight checklist already confirmed.")
+        return
+
+    checklist = [
+        "인터넷 연결이 되어 있음",
+        "macOS 터미널 또는 Windows PowerShell을 열 수 있음",
+        "Codex를 사용할 수 있는 GPT/ChatGPT 계정으로 로그인되어 있음",
+        "GPT/ChatGPT 웹 설정에서 Codex 기능을 켰음",
+        "Codex Computer Use 옵션을 켰음",
+        "설치 중 관리자 권한/브라우저 로그인 요청을 승인할 수 있음",
+        "Telegram을 쓸 경우 BotFather 봇과 내 Telegram ID를 준비했음",
+    ]
+    print("\nPreflight checklist")
+    for item in checklist:
+        print(f" - {item}")
+    print()
+
+    if skip:
+        runner.warn("Skipping preflight confirmation (--skip-preflight).")
+        return
+    if assume_yes:
+        runner.info("--yes: assuming preflight checklist is complete.")
+        return
+    if dry_run:
+        runner.info("dry-run: preflight confirmation skipped.")
+        return
+    if not can_prompt_user():
+        runner.warn("No interactive terminal found; continuing without preflight confirmation.")
+        return
+
+    answer = ask("위 항목을 모두 완료했나요? 계속하려면 yes 입력", "no").strip().lower()
+    accepted = {"y", "yes", "ok", "done", "ready", "네", "예", "응", "완료", "준비됨"}
+    if answer not in accepted:
+        raise SystemExit("사전 준비가 끝난 뒤 같은 설치 명령을 다시 실행해 주세요.")
 
 
 def ensure_dir(path: Path, runner: StepRunner) -> None:
@@ -288,6 +377,46 @@ def install_or_update_hermes(runner: StepRunner, skip: bool = False) -> None:
         runner.ok(f"Hermes CLI installed: {hermes}")
     else:
         runner.warn("Hermes CLI still not on PATH. Continuing; Web UI can still be prepared.")
+
+
+def has_interactive_input() -> bool:
+    if is_windows() or sys.stdin.isatty():
+        return True
+    return Path("/dev/tty").exists()
+
+
+def ensure_gpt_oauth(active_home: Path, runner: StepRunner, skip: bool = False) -> None:
+    if skip:
+        runner.warn("Skipping GPT OAuth setup (--skip-gpt-oauth).")
+        return
+    refresh_path()
+    hermes = shutil.which("hermes")
+    if not hermes:
+        runner.warn("Hermes CLI not found; GPT OAuth setup will be available after Hermes is installed.")
+        return
+
+    env = os.environ.copy()
+    env["HERMES_HOME"] = str(active_home)
+    env["HERMES_CONFIG_PATH"] = str(active_home / "config.yaml")
+    runner.info("checking OpenAI Codex OAuth status")
+    if runner.dry_run:
+        return
+    status = subprocess.run([hermes, "auth", "status", DEFAULT_HERMES_PROVIDER], env=env, text=True, check=False)
+    if status.returncode == 0:
+        runner.ok("GPT OAuth already connected for openai-codex.")
+        return
+    if not has_interactive_input():
+        runner.warn("GPT OAuth needs an interactive terminal. Run this after install:")
+        runner.warn(f"HERMES_HOME={active_home} hermes auth add {DEFAULT_HERMES_PROVIDER} --type oauth --label openai-codex")
+        return
+
+    runner.warn("Starting GPT OAuth login. Complete the browser/device-code flow when prompted.")
+    runner.run_interactive([hermes, "auth", "add", DEFAULT_HERMES_PROVIDER, "--type", "oauth", "--label", "openai-codex"], env=env, check=False)
+    status = subprocess.run([hermes, "auth", "status", DEFAULT_HERMES_PROVIDER], env=env, text=True, check=False)
+    if status.returncode == 0:
+        runner.ok("GPT OAuth connected for openai-codex.")
+    else:
+        runner.warn("GPT OAuth is not connected yet. Re-run the auth command shown above when ready.")
 
 
 def discover_agent_dir(install_path: Path, hermes_base: Path) -> Path | None:
@@ -431,10 +560,12 @@ def write_env(webui_dir: Path, agent_dir: Path | None, hermes_base: Path, active
         "# Generated by install.py. Edit as needed.",
         f"HERMES_BASE_HOME={hermes_base}",
         f"HERMES_HOME={active_home}",
+        f"HERMES_CONFIG_PATH={active_home / 'config.yaml'}",
         "HERMES_WEBUI_HOST=127.0.0.1",
         f"HERMES_WEBUI_PORT={port}",
         f"HERMES_WEBUI_STATE_DIR={active_home / 'webui'}",
         f"HERMES_WEBUI_DEFAULT_WORKSPACE={active_home / 'workspace'}",
+        f"HERMES_WEBUI_DEFAULT_MODEL={DEFAULT_WEBUI_MODEL}",
     ]
     if agent_dir:
         lines.insert(1, f"HERMES_WEBUI_AGENT_DIR={agent_dir}")
@@ -452,6 +583,126 @@ def append_env_value(path: Path, key: str, value: Path, runner: StepRunner) -> N
         return
     suffix = "" if not existing or existing.endswith("\n") else "\n"
     path.write_text(existing + suffix + line + "\n", encoding="utf-8")
+
+
+def append_env_string(path: Path, key: str, value: str, runner: StepRunner) -> None:
+    line = f"{key}={value}"
+    runner.info(f"ensure {key} in {path}")
+    if runner.dry_run:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existing = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""
+    if any(l.split("=", 1)[0].strip() == key for l in existing.splitlines() if "=" in l):
+        return
+    suffix = "" if not existing or existing.endswith("\n") else "\n"
+    path.write_text(existing + suffix + line + "\n", encoding="utf-8")
+
+
+def upsert_env_string(path: Path, key: str, value: str, runner: StepRunner, *, overwrite: bool = True) -> None:
+    runner.info(f"set {key} in {path}" if value else f"ensure {key} in {path}")
+    if runner.dry_run:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existing = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""
+    lines = existing.splitlines()
+    found = False
+    out: list[str] = []
+    for line in lines:
+        if "=" in line and line.split("=", 1)[0].strip() == key:
+            found = True
+            current = line.split("=", 1)[1].strip()
+            if value and (overwrite or not current):
+                out.append(f"{key}={value}")
+            else:
+                out.append(line)
+        else:
+            out.append(line)
+    if not found:
+        out.append(f"{key}={value}")
+    path.write_text("\n".join(out).rstrip("\n") + "\n", encoding="utf-8")
+
+
+def _yaml_value(value: str | bool) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return json.dumps(value)
+
+
+def _upsert_yaml_key(text: str, section: str, key: str, value: str | bool) -> str:
+    replacement = f"  {key}: {_yaml_value(value)}"
+    section_re = re.compile(rf"(?m)^{re.escape(section)}:\s*$")
+    match = section_re.search(text)
+    if not match:
+        suffix = "" if not text or text.endswith("\n") else "\n"
+        return f"{text}{suffix}{section}:\n{replacement}\n"
+
+    section_start = match.end()
+    next_section = re.search(r"(?m)^\S[^:\n]*:\s*$", text[section_start:])
+    section_end = section_start + next_section.start() if next_section else len(text)
+    block = text[section_start:section_end]
+    key_re = re.compile(rf"(?m)^  {re.escape(key)}:\s*.*$")
+    if key_re.search(block):
+        block = key_re.sub(replacement, block, count=1)
+    else:
+        insert = "\n" if block and not block.startswith("\n") else ""
+        block = f"{insert}{replacement}\n{block}"
+    return text[:section_start] + block + text[section_end:]
+
+
+def write_hermes_config(active_home: Path, workspace: Path, runner: StepRunner) -> None:
+    path = active_home / "config.yaml"
+    runner.info(f"ensure Hermes GPT OAuth defaults in {path}")
+    if runner.dry_run:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    else:
+        text = """# Generated by AI Hub OS Hermes installer. Edit as needed.
+model:
+  default: ""
+  provider: "auto"
+  base_url: ""
+agent:
+  reasoning_effort: ""
+display:
+  show_reasoning: false
+workspace:
+  default: ""
+"""
+    updates: tuple[tuple[str, str, str | bool], ...] = (
+        ("model", "default", DEFAULT_HERMES_MODEL),
+        ("model", "provider", DEFAULT_HERMES_PROVIDER),
+        ("model", "base_url", ""),
+        ("agent", "reasoning_effort", DEFAULT_REASONING_EFFORT),
+        ("display", "show_reasoning", False),
+        ("workspace", "default", str(workspace)),
+    )
+    for section, key, value in updates:
+        text = _upsert_yaml_key(text, section, key, value)
+    path.write_text(text, encoding="utf-8")
+
+
+def write_webui_settings(active_home: Path, workspace: Path, runner: StepRunner, bot_name: str = "Hermes") -> None:
+    path = active_home / "webui" / "settings.json"
+    runner.info(f"ensure Web UI default model in {path}")
+    if runner.dry_run:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    settings: dict[str, object] = {}
+    if path.exists():
+        try:
+            existing = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(existing, dict):
+                settings.update(existing)
+        except json.JSONDecodeError:
+            backup = path.with_suffix(f".json.bak-{int(time.time())}")
+            runner.warn(f"Invalid Web UI settings backed up: {backup}")
+            shutil.move(str(path), str(backup))
+    settings["default_model"] = DEFAULT_WEBUI_MODEL
+    settings.setdefault("default_workspace", str(workspace))
+    settings["bot_name"] = bot_name or "Hermes"
+    path.write_text(json.dumps(settings, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def scaffold_obsidian_workspace(obsidian_dir: Path, runner: StepRunner) -> Path:
@@ -552,22 +803,29 @@ def env_has_telegram_credentials(path: Path) -> bool:
     return bool(vals.get("TELEGRAM_BOT_TOKEN")) and bool(vals.get("TELEGRAM_ALLOWED_USERS"))
 
 
-def scaffold_telegram(active_home: Path, runner: StepRunner) -> bool:
-    text = """# Telegram Gateway scaffold
-# Create a bot with @BotFather, then fill these values.
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_ALLOWED_USERS=
-# Optional:
-# TELEGRAM_HOME_CHANNEL=
-# TELEGRAM_PROXY=
-"""
+def scaffold_telegram(active_home: Path, runner: StepRunner, allowed_users: str = "", bot_name: str = "", bot_token: str = "") -> bool:
     env_path = active_home / ".env"
     configured = env_has_telegram_credentials(env_path)
     if configured:
         runner.ok("Telegram credentials already present; keeping existing values.")
         return True
-    write_if_missing(env_path, text, runner, append=True)
-    return False
+
+    if not env_path.exists() or "Telegram Gateway scaffold" not in env_path.read_text(encoding="utf-8", errors="ignore"):
+        write_if_missing(
+            env_path,
+            """# Telegram Gateway scaffold
+# Create a bot with @BotFather, then fill these values.
+# Optional:
+# TELEGRAM_HOME_CHANNEL=
+# TELEGRAM_PROXY=
+""",
+            runner,
+            append=True,
+        )
+    upsert_env_string(env_path, "TELEGRAM_BOT_TOKEN", bot_token.strip(), runner, overwrite=bool(bot_token.strip()))
+    upsert_env_string(env_path, "TELEGRAM_ALLOWED_USERS", allowed_users.strip(), runner, overwrite=bool(allowed_users.strip()))
+    upsert_env_string(env_path, "HERMES_BOT_NAME", bot_name.strip(), runner, overwrite=bool(bot_name.strip()))
+    return env_has_telegram_credentials(env_path) if not runner.dry_run else bool(bot_token.strip() and allowed_users.strip())
 
 
 def install_telegram_desktop(runner: StepRunner, skip: bool = False) -> None:
@@ -693,6 +951,7 @@ def maybe_start_gateway(active_home: Path, runner: StepRunner, auto_start: bool)
         return
     env = os.environ.copy()
     env["HERMES_HOME"] = str(active_home)
+    env["HERMES_CONFIG_PATH"] = str(active_home / "config.yaml")
     runner.run([hermes, "gateway", "status"], env=env, check=False)
     runner.run([hermes, "gateway", "install"], env=env, check=False)
     runner.run([hermes, "gateway", "start"], env=env, check=False)
@@ -705,11 +964,14 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--obsidian-path", help="Obsidian folder. Default: <AI Hub OS>/Obsidian")
     p.add_argument("--llm-wiki-path", help="LLM Wiki folder. Default: <AI Hub OS>/LLM Wiki")
     p.add_argument("--llm-wiki-gist-url", default=DEFAULT_LLM_WIKI_GIST_URL, help="LLM Wiki guide URL.")
-    p.add_argument("--agent-name", help="Hermes profile/agent name. Default: default")
+    p.add_argument("--agent-name", "--bot-name", dest="agent_name", help="Hermes bot/profile name. Default: Hermes interactively, default with --yes.")
+    p.add_argument("--telegram-allowed-users", "--bot-id", dest="telegram_allowed_users", help="Telegram user/chat ID allowed to talk to this bot.")
     p.add_argument("--repo-url", default=DEFAULT_REPO_URL, help=f"Web UI repo URL. Default: {DEFAULT_REPO_URL}")
     p.add_argument("--port", type=int, default=DEFAULT_PORT, help=f"Web UI port. Default: {DEFAULT_PORT}")
     p.add_argument("--yes", action="store_true", help="Use defaults for missing answers.")
+    p.add_argument("--skip-preflight", action="store_true", help="Skip the prerequisite confirmation checklist.")
     p.add_argument("--skip-hermes-install", action="store_true", help="Do not run official Hermes installer if hermes is missing.")
+    p.add_argument("--skip-gpt-oauth", action="store_true", help="Do not start/check OpenAI Codex OAuth setup.")
     p.add_argument("--skip-telegram-desktop", action="store_true", help="Do not check/install Telegram Desktop app.")
     p.add_argument("--skip-obsidian", action="store_true", help="Do not check/install Obsidian app.")
     p.add_argument("--skip-llm-wiki", action="store_true", help="Do not create/download the LLM Wiki guide folder.")
@@ -724,6 +986,7 @@ def main() -> int:
     runner = StepRunner(args.dry_run)
     refresh_path()
     runner.info(f"Detected platform: {platform.system()}" + (" (WSL)" if is_wsl() else ""))
+    confirm_preflight(runner, assume_yes=args.yes, skip=args.skip_preflight, dry_run=args.dry_run)
 
     ai_hub_root_explicit = bool(args.ai_hub_root or os.environ.get("AI_HUB_OS_ROOT"))
     ai_hub_root = Path(args.ai_hub_root or os.environ.get("AI_HUB_OS_ROOT") or default_ai_hub_root()).expanduser().resolve()
@@ -732,7 +995,16 @@ def main() -> int:
     install_path = Path(args.install_path or (default_path if args.yes else ask("Install path", default_path))).expanduser().resolve()
     obsidian_path = Path(args.obsidian_path or os.environ.get("AI_HUB_OS_OBSIDIAN_DIR") or default_obsidian_path(ai_hub_root)).expanduser().resolve()
     llm_wiki_path = Path(args.llm_wiki_path or os.environ.get("AI_HUB_OS_LLM_WIKI_DIR") or default_llm_wiki_path(ai_hub_root)).expanduser().resolve()
-    agent_name_raw = args.agent_name or ("default" if args.yes else ask("Agent name", "default"))
+    agent_name_raw = args.agent_name or ("Hermes" if args.yes else ask("Bot name", "Hermes"))
+    telegram_allowed_users = args.telegram_allowed_users or ""
+    telegram_bot_token = ""
+    auto_start_gateway = args.auto_start_gateway
+    if not args.yes and can_prompt_user():
+        if ask_yes_no("Telegram Gateway를 설정할까요? BotFather 봇이 있으면 yes", False):
+            telegram_allowed_users = telegram_allowed_users or ask("Telegram user ID / allowed chat ID", "")
+            telegram_bot_token = ask_secret("BotFather token")
+            if telegram_allowed_users.strip() and telegram_bot_token.strip():
+                auto_start_gateway = ask_yes_no("설치 후 Telegram Gateway를 바로 시작할까요?", auto_start_gateway)
     agent_name = sanitize_agent_name(agent_name_raw)
     if agent_name != agent_name_raw.strip().lower():
         runner.warn(f"Agent name sanitized: {agent_name_raw!r} -> {agent_name!r}")
@@ -742,6 +1014,7 @@ def main() -> int:
     install_or_update_hermes(runner, skip=args.skip_hermes_install)
     webui_dir = clone_or_update_webui(args.repo_url, install_path, runner)
     active_home = prepare_profile(agent_name, hermes_base, runner)
+    write_hermes_config(active_home, active_home / "workspace", runner)
     agent_dir = discover_agent_dir(install_path, hermes_base)
     if agent_dir:
         runner.ok(f"Hermes agent dir: {agent_dir}")
@@ -749,12 +1022,17 @@ def main() -> int:
         runner.warn("Hermes agent checkout not found yet; Web UI .env will omit HERMES_WEBUI_AGENT_DIR.")
 
     write_env(webui_dir, agent_dir, hermes_base, active_home, args.port, runner)
+    write_webui_settings(active_home, active_home / "workspace", runner, bot_name=agent_name_raw.strip() or "Hermes")
+    append_env_string(webui_dir / ".env", "HERMES_CONFIG_PATH", str(active_home / "config.yaml"), runner)
+    append_env_string(webui_dir / ".env", "HERMES_WEBUI_DEFAULT_MODEL", DEFAULT_WEBUI_MODEL, runner)
     append_env_value(webui_dir / ".env", "HERMES_WEBUI_OBSIDIAN_DIR", obsidian_path, runner)
     append_env_value(webui_dir / ".env", "HERMES_WEBUI_LLM_WIKI_DIR", llm_wiki_path, runner)
+    append_env_string(active_home / ".env", "HERMES_CONFIG_PATH", str(active_home / "config.yaml"), runner)
     append_env_value(active_home / ".env", "OBSIDIAN_HOME", obsidian_path, runner)
     append_env_value(active_home / ".env", "OBSIDIAN_VAULT_PATH", obsidian_path, runner)
     append_env_value(active_home / ".env", "LLM_WIKI_PATH", llm_wiki_path, runner)
-    telegram_ready = scaffold_telegram(active_home, runner)
+    telegram_ready = scaffold_telegram(active_home, runner, allowed_users=telegram_allowed_users, bot_name=agent_name_raw, bot_token=telegram_bot_token)
+    ensure_gpt_oauth(active_home, runner, skip=args.skip_gpt_oauth)
     scaffold_obsidian_workspace(obsidian_path, runner)
     install_obsidian(runner, skip=args.skip_obsidian)
     scaffold_llm_wiki(llm_wiki_path, runner, gist_url=args.llm_wiki_gist_url, skip=args.skip_llm_wiki)
@@ -765,10 +1043,12 @@ def main() -> int:
     env.update({
         "HERMES_BASE_HOME": str(hermes_base),
         "HERMES_HOME": str(active_home),
+        "HERMES_CONFIG_PATH": str(active_home / "config.yaml"),
         "HERMES_WEBUI_HOST": "127.0.0.1",
         "HERMES_WEBUI_PORT": str(args.port),
         "HERMES_WEBUI_STATE_DIR": str(active_home / "webui"),
         "HERMES_WEBUI_DEFAULT_WORKSPACE": str(active_home / "workspace"),
+        "HERMES_WEBUI_DEFAULT_MODEL": DEFAULT_WEBUI_MODEL,
         "HERMES_WEBUI_OBSIDIAN_DIR": str(obsidian_path),
         "HERMES_WEBUI_LLM_WIKI_DIR": str(llm_wiki_path),
     })
@@ -777,7 +1057,7 @@ def main() -> int:
 
     if not args.no_verify:
         verify_webui(webui_dir, py, env, args.port, runner)
-    maybe_start_gateway(active_home, runner, args.auto_start_gateway)
+    maybe_start_gateway(active_home, runner, auto_start_gateway)
 
     print("\nDone.")
     print(f"Web UI repo : {webui_dir}")
@@ -789,7 +1069,10 @@ def main() -> int:
     if telegram_ready:
         print("Telegram  : token/user ID already found. Use --auto-start-gateway to start gateway automatically.")
     else:
-        print("Telegram  : BotFather token and Telegram user ID are still manual one-time secrets.")
+        if telegram_allowed_users.strip():
+            print("Telegram  : Telegram ID saved. BotFather token is still a manual one-time secret.")
+        else:
+            print("Telegram  : BotFather token and Telegram user ID are still manual one-time setup values.")
         print(f"            Fill them in: {active_home / '.env'}")
         print("            then run: hermes gateway setup && hermes gateway")
     return 0

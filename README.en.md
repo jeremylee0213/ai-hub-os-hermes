@@ -194,8 +194,17 @@ This reduces avoidable mistakes and makes the product feel more trustworthy.
 
 ## Quick start
 
-### Prerequisite
-You need a working Hermes installation first.
+### Prerequisites
+
+- Internet connection
+- macOS Terminal or Windows PowerShell
+- Logged into a GPT/ChatGPT account that can use Codex
+- Enable Codex in GPT/ChatGPT web settings
+- Enable Codex Computer Use in GPT/ChatGPT web settings
+- Complete the GPT OAuth browser login approval when prompted
+- If using Telegram, prepare a BotFather bot and your Telegram ID
+
+Hermes Agent, Python, Git, Obsidian, and Telegram Desktop are checked/installed automatically where possible.
 
 ### Automated install
 
@@ -213,13 +222,18 @@ Windows PowerShell:
 iex (irm https://raw.githubusercontent.com/aihubos/ai-hub-os-hermes/main/install.ps1)
 ```
 
-When terminal input is available, the installer asks only two questions by default.
+When terminal input is available, the installer first confirms a prerequisite checklist.
 In non-interactive automation it continues with defaults.
 
 ```text
+위 항목을 모두 완료했나요? 계속하려면 yes 입력 [no]:
 Windows:     Install path [C:\AI Hub OS\Hermes]:
 macOS/Linux: Install path [~/AI Hub OS/Hermes]:
-Agent name [default]:
+Bot name [Hermes]:
+Telegram Gateway를 설정할까요? BotFather 봇이 있으면 yes [no]:
+Telegram user ID / allowed chat ID []:
+BotFather token [Enter to skip]:
+설치 후 Telegram Gateway를 바로 시작할까요? [no]:
 ```
 
 Then it automates as much as possible:
@@ -230,13 +244,15 @@ Then it automates as much as possible:
 - Install/update this Web UI
 - Create default folders: `C:\AI Hub OS\Hermes`, `C:\AI Hub OS\Obsidian`, `C:\AI Hub OS\LLM Wiki`
 - Create profile folders and `.env` files
+- Try GPT OAuth setup via `openai-codex`
+- Set Hermes/Web UI/Telegram defaults to `gpt-5.4-mini` with reasoning `off`
 - On macOS/Windows, skip Obsidian if already installed, otherwise try to install it
 - Create the starter vault structure inside `Obsidian`, then save the LLM Wiki guide in `LLM Wiki`
 - On macOS/Windows, skip Telegram Desktop if already installed, otherwise try to install it
-- Create Telegram Gateway token placeholders
+- Save Telegram ID/token when entered, otherwise leave placeholders in `.env`
 - Verify the Web UI `/health` endpoint
 
-BotFather tokens and model/API keys are still one-time manual secrets.
+BotFather tokens and model/API keys are still one-time manual secrets. GPT OAuth also requires the user to complete the browser login approval.
 
 ### Start locally
 
